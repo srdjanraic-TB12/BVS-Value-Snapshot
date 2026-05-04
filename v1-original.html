@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Samsara Value Snapshot Generator — V1 Original</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;}
+input:focus,select:focus,textarea:focus{outline:none;}
+button{font-family:inherit;cursor:pointer;}
+@keyframes sIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@media print{
+  .no-print{display:none!important;}
+  body,html{margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .snap{box-shadow:none!important;margin:0!important;border-radius:0!important;width:11in!important;height:8.5in!important;padding:0.35in 0.45in!important;}
+  @page{size:11in 8.5in landscape;margin:0;}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect} = React;
+
+
+const IconBase = ({d, size=16, color="currentColor", style={}, children}) => 
+  React.createElement("svg", {width:size, height:size, viewBox:"0 0 24 24", fill:"none", stroke:color, strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", style:style}, 
+    children || React.createElement("path", {d:d}));
+const ChevronRight = ({size=16,color="currentColor",style={}}) => IconBase({d:"M9 18l6-6-6-6",size,color,style});
+const ChevronLeft = ({size=16,color="currentColor",style={}}) => IconBase({d:"M15 18l-6-6 6-6",size,color,style});
+const Check = ({size=16,color="currentColor",style={}}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:3,strokeLinecap:"round",strokeLinejoin:"round",style:style},React.createElement("polyline",{points:"20 6 9 17 4 12"}));
+const X = ({size=10,color="currentColor"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2.5,strokeLinecap:"round"},React.createElement("line",{x1:"18",y1:"6",x2:"6",y2:"18"}),React.createElement("line",{x1:"6",y1:"6",x2:"18",y2:"18"}));
+const Download = ({size=12}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"},React.createElement("path",{d:"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"}),React.createElement("polyline",{points:"7 10 12 15 17 10"}),React.createElement("line",{x1:"12",y1:"15",x2:"12",y2:"3"}));
+const RotateCcw = ({size=12}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:"currentColor",strokeWidth:2,strokeLinecap:"round"},React.createElement("polyline",{points:"1 4 1 10 7 10"}),React.createElement("path",{d:"M3.51 15a9 9 0 1 0 2.13-9.36L1 10"}));
+const Lock = ({size=9,color="#94A3B8"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round"},React.createElement("rect",{x:"3",y:"11",width:"18",height:"11",rx:"2",ry:"2"}),React.createElement("path",{d:"M7 11V7a5 5 0 0 1 10 0v4"}));
+const AlertTriangle = ({size=15,color="#D97706"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round"},React.createElement("path",{d:"M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"}),React.createElement("line",{x1:"12",y1:"9",x2:"12",y2:"13"}),React.createElement("line",{x1:"12",y1:"17",x2:"12.01",y2:"17"}));
+const Shield = ({size=18,color="#0369EA"}) => IconBase({d:"M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",size,color});
+const TrendingUp = ({size=18,color="#0369EA"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round",strokeLinejoin:"round"},React.createElement("polyline",{points:"23 6 13.5 15.5 8.5 10.5 1 18"}),React.createElement("polyline",{points:"17 6 23 6 23 12"}));
+const Zap = ({size=18,color="#0369EA"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round"},React.createElement("polygon",{points:"13 2 3 14 12 14 11 22 21 10 12 10 13 2"}));
+const BarChart3 = ({size=11,color="#0369EA"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round"},React.createElement("path",{d:"M3 3v18h18"}),React.createElement("path",{d:"M18 17V9"}),React.createElement("path",{d:"M13 17V5"}),React.createElement("path",{d:"M8 17v-3"}));
+const BookOpen = ({size=11,color="currentColor"}) => React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:2,strokeLinecap:"round"},React.createElement("path",{d:"M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"}),React.createElement("path",{d:"M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"}));
+const ArrowRight = ({size=11,color="#0369EA"}) => IconBase({d:"M5 12h14m-7-7 7 7-7 7",size,color});
+const Phone = ({size=10,color="#0369EA"}) => IconBase({d:"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z",size,color});
+
+
+
+const C = { navy:"#00263E", blue:"#0369EA", blueLight:"#77BEFF", blueBg:"#F0F6FE", green:"#71AD51", greenBg:"#F0F7EC", red:"#EB0045", redBg:"#FEF0F4", amber:"#FFB71B", dark:"#333333", gray:"#666666", grayLight:"#94A3B8", grayBorder:"#E2E8F0", white:"#FFFFFF" };
+
+
+const SAMSARA_LOGO_WHITE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAYAAAAehFoBAAAEF0lEQVR42u2Ya4hVVRTHf/uOFTmZYfghhKIPEdkDtQKFxCh60bsIQnqAFNaHNHogRH0oKmkIInpoIFQUBWkfNHpJ5SMhLMMwasastEzLiKmU9M7MvfPryzqxOaTOnebM9OEuOOx1111n7/9e57/XWudAW9rSlrYcStJITaTWgBpgXMRvgMGU0uD/YsdqLcAezq9DTWMaYbUjpdQM/SzgMmAacDzQBHYDnwDvppR2FRsck2irHTFOUzd4eFmmTsrvHbUIq+NSSg11PrAU2Ai8FBEFOBk4APwMHAGcASyM9S5OKW3Kn04rMm6YNGiodwLPA/OAXTGeCTSAz4FjgalAHVgPXArcBWxUp6eUtlROj4wG58RjvlFd4NCkV52tvq7+oo6PA5sqzQgx9qivqtdkgBrqgNoMvRH6gDoYPvvUGQG+q6BX1dGdE4vPUn8K/fcM+OC/RPePTH9RvU/tVztjziFHuTaMA3orsBk4AZgCLAHmAtcD68KvCQwCe4Gb4rod+DP8vozDeH6rOFoBXByOmcCnwNlR0bqA14CngUcjM6SYez4wGXgL6AyfCaHvAWa3mq2GDDg7zZOBXmBiLDQHuDd+XwUsj3l3RCSfAD4DVgPnxSYnxBxTWqVmbYj8TaV7xgN/xeJLgaOBm4FTgC3htwE4F1gZG3oMuCA22R9z1CrPw5FnTwVWxOJHAs8Gbw8Az4Xf5vC7Frgho1Uzi269kgiXZF882u4AaGwiAccAk4BvgO+AWRGUZkQ1RW/RGfa+SgEHNeoBbHpEtiNAFxyfETzui0aoWCfF9RRwy3DT63AiXAB8CHgF6IkUVfQFc4CXI9ITwz4QPstizauzuSopGqkYo8oV8qE6Vf02q3Z94ftgVLn++G95VuUKeaGSalcCvDVK7s5Y9G319OgRCnlD3R56f4CfGZWxkd1bLeDQd6i71UsCuOq26Cuui0j2h88z6oXRIPWF7yb1itCXjAbgngD6axbBQj5Q71AvUi9XH1C7sx6jaJD2hG1pZQ1QRosv1L1qV6nBaR6itWxk+g71ydAXtwq41mJ2ANgaY2+M6yPn1rLCsg74IUt1HcCazLY37F9V2QuPi3FuKXqL1FXB0W1hu1tdHXQpbPeo72X31dUT8z57xCkR14Q4UAOl3vfr7DAV9u7gci7FfSv+6wtpK038bRk371dXBojfwr5Afb9kW6i+E1yvq6dFAGpUKRnoIu9+pH4fufWRsK1Vf4y8+3DY1oSf8bZdbXRL1KipR6lvZo96u7q4RJOd6uNBg384P2pgD5KXF5Xe6Q4m3eqVow62fAhDPynK78dRUOrq/ojwKnWeOn4kwKaR4HT+BUc9LuvSelNK+w/mO2afW7NPrc2UkkP9b0y/D5f4XczrSIBsS1vaMobyNyvhUVfghnToAAAAAElFTkSuQmCC";
+const SAMSARA_LOGO_DARK = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAAAsCAYAAAAehFoBAAAGOUlEQVR42u2Ya4xeVRWGn7X2Pt9Mp5cp1WpMRSnpdLBRWrwQKa0fl0SEHxZTJ0YFNaghGI0k1do/ZCTxEiVGm1QuCkkJYtBpoNgGvMTLDERUnNSUMC29GCcpNJh0sCPDfPOdvdfyx/laqEHsTGem/Jj31zk5++zz7ve8e102zGEOc5jDayFM31S9Sp3A8MUCQwK9Qp3Aeecpw8MA/jpZc68C+v/H9QRAzvRrZzhBT4C+DMDKdRdCvBpsDcgbEM+4PAc8gYdHOfi7Z19e4K12Fgi3yHatXYMW2wjFpdV0DtIS3K36hGXwfA9jE5s58qeRUxY6K4Tr9Uh/f6Jr/Y3E2p1Y+jPZthPkudaI5RjjKEcxCoR3IvplQCibH+Tvf/zrVEnLlJVdWb+JWNxOLm8g27OEeANu70I84T4IsghkFdAAHYDG/UjblxD5JFZexIHH907FHjIlst3196LxSdLEx4E3Edu2goMZiLQs0boH0ABmL2ATG9DaF8AvZ/TF8zk62GhFj9OOIDo5wquqic1/Qi7vR2hQtG8ll5DLjOWEZSM1M7nMeDYsJ3Lp4OcgtUdI+TaQGvPnfR0w6vUwQwq31F2xrk4s/gB5LeZ9hNoycvNfIIsrJZNXMvOy2paOg3QSa5Ca23F/GtFv0V47h72/GePkbp1Ohev/rEiofhpLe8i8hdi+jNS8A+QTeN6I5X40Cu4ZxIBRPF2H6nXgnyeXx3E2ojyFSMF447KWGDr9lujvbxnS3w/yF8Tfg2VH9bvgP0VrW3H7BmZHERE0KJZvJLOUomMXJvMx20qtfWF1nZ8H1p8ixjR7uCLsLAVGcOkkRMGsjsgmYtGJ6Icx6yO2Kbn8B7F4CtXvUDaeRPg1yDrcHXwhwgjIssnGKJ2810Vx7wAfw80RuRP3eZTj1+PehbK3srA8TkrvQ+Rh8sQmRL5JCFdgSUCbOB2I62QJxymkmoTTjbADd8G9Riy2kVMGH8f0h+QShD24dCPhI0jsaW1IAzLmIwRZhntjphR+Jf6NyDqEfeRyHBEnlwlcCMUCxJeQ0wHwwwiXgEfwTE5NNAjwBCrzKdojMDHThAW8QdG+AOciYBuxFnAcxyor+LsR+sAnwNdgmVYmEUQF5Ptgn5pqBTN5hZ1ALh3RW0jcR27uJxQFQsYNhDpB7sV0CRo7wTLuJUVbQZq4G3clFBvICWTy9fhULCG4CRrfTCE/INtG3A4Tam1YyrisYt/AQcTPRzThYhTtNdLEDkzuQPXuqoqbLYWriGHk5hE0XkEIt5HKDVh+AC0CRa1G1/qfA59FNKIKuXkLlr9HDL8AX4TbkRPJcKYJO0gb5s8jfI5cGhKuIRY78fQz8I2ktAPRaxFtI5Xb8HQ1+Cga+9GwDLO/YXoTouBiMx/W8Aaq5+LcByi5LNGwAq09RE6/RWUH4j8iaw211aDb0OICcunkZgZWI34PnkEmX97G01e2VaCINHAfA9sO+lVCLHCDXBohXonIlViu/p0WVbeRmpkQAxDIaRjxHYhuwnlh5ixxogx0f6biLiNVMsgDuB1u1Q5glnDvx/Iwlgx30BDI6fe4DaNqIKPVbrCnZyGsycOEuBAJ3271bo8AQ4g0wQ+hIYLvRPQAohnsEBpAZDeW96NhORpuJTUnSD5wamE1vR1HNbZ77QIsPoPoUrAAIqhCSvtANxNkV1VjqGB5P/AVNOzG/URjmghFwNKDHBj4KD09gb7T7+0mF7h7egIDv2rwxrcdJ8RrETEsb8FtnBgvxfNVhKIDs5txD4R4MW4fIhQd5HwzuBOKLjyXOB9jZPgYQz1Av88M4aEhh57AsUcHWfLWC4htF5JTRLUbGMP5MaJ1sA5EVoK/iPtdiNbx3A6yghiXkNMXOfjYL6su5nab4cTRZ9Cr2PzPUI4/SG3e5Ygux3ICilZRX0fk3MoaXmApEYvLiMVyUnMLBx+7i55Za/NPvlf9xpUf+BqiW9C4GAFyyUm/ikIowDOY7SfbZg4N7Jr9g5RT33Xeccnbsdr14Ffh0g2+qNWhHAPZg+hORkcf4OjgS2dCdhrO1v7rfA1gdX0xTe2ktEznwhEGd7/0P8eeRSj1enx1AXpf49lZUfhV55RXpPTXy7nwHOYwh6ngP6ok5GXOQWiBAAAAAElFTkSuQmCC";
+const INDUSTRIES=["Municipal Utilities","City Fleet Services","Public Works","Transit Authority","Parks & Recreation","Water/Wastewater","County Government","State DOT"];
+
+// #4: Round to nearest 5K
+function roundTo5K(n){ return Math.round(n / 5000) * 5000; }
+
+// #12: Tangible equivalency
+const EQUIVALENCY = { risk:{divisor:15000,label:"prevented accidents per year"}, efficiency:{divisor:50000,label:"vehicles you don't need to purchase"}, transform:{divisor:70000,label:"FTEs redirected from paperwork to operations"} };
+
+// #3: Industry context with customer name
+function getContext(industry, name) {
+  const m = {
+    "Municipal Utilities": `As a municipal utilities provider, ${name} faces mounting pressure to protect field crews, maintain aging infrastructure, and deliver reliable service — all while managing tightening budgets and increasing public scrutiny.`,
+    "City Fleet Services": `As a city fleet operation, ${name} is under growing pressure to do more with less — balancing vehicle availability, rising maintenance costs, and accountability to taxpayers who expect efficient use of public resources.`,
+    "Public Works": `As a public works department, ${name} is the backbone of community infrastructure — but aging fleets, manual processes, and limited visibility into field operations create costly inefficiencies and safety blind spots.`,
+    "Transit Authority": `As a transit agency, ${name} must balance rider safety, on-time performance, and fleet reliability — all while managing aging vehicles, driver shortages, and increasing ridership demands.`,
+    "Parks & Recreation": `${name}'s parks and recreation operations manage sprawling vehicle and equipment fleets across dispersed locations, making visibility, accountability, and maintenance coordination a constant challenge.`,
+    "Water/Wastewater": `As a water and wastewater utility, ${name} operates around the clock with crews responding to emergencies across wide service areas — where every minute of response time matters and fleet visibility is critical.`,
+    "County Government": `${name} oversees diverse fleet operations spanning law enforcement, public works, social services, and emergency response — requiring unified visibility across siloed departments.`,
+    "State DOT": `${name} manages one of the largest and most complex public fleets in the state, with seasonal demands, vast geographic coverage, and intense public accountability for safety and spending.`,
+  };
+  return m[industry] || "";
+}
+
+const PRODUCT_CATEGORIES=[
+  {id:"safety",label:"AI Dash Cameras",options:[
+    {id:"cm33",label:"Front-Facing",hw:"CM33",custLabel:"AI Front-Facing Dash Camera",avoidCost:1125,savings:338,appliesTo:"fleet"},
+    {id:"cm34",label:"Dual-Facing",hw:"CM34",custLabel:"AI Dual-Facing Dash Camera",avoidCost:1125,savings:450,appliesTo:"fleet"},
+    {id:"cm34_aim4",label:"Dual-Facing + AI Multi-Cam",hw:"CM34 + AIM4",custLabel:"AI Dual-Facing + 360° Multi-Cam",avoidCost:1125,savings:563,appliesTo:"fleet"},
+  ]},
+  {id:"telematics",label:"GPS Fleet Tracking",options:[
+    {id:"vg",label:"Vehicle Gateway",hw:"VG54/VG55",custLabel:"GPS Fleet Tracking",avoidCost:1340,savings:335,appliesTo:"fleet"},
+  ]},
+  {id:"equipment",label:"Equipment Monitoring",options:[
+    {id:"at",label:"Asset Tags",hw:"AT11, AT12, AT13",custLabel:"Asset Tags",avoidCost:428,savings:143,appliesTo:"asset"},
+    {id:"ag51",label:"Unpowered Asset Tracker",hw:"AG51",custLabel:"Unpowered Asset Tracker",avoidCost:428,savings:228,appliesTo:"asset"},
+    {id:"ag52",label:"Basic Equipment Monitoring",hw:"AG52",custLabel:"Basic Equipment Monitoring",avoidCost:1403,savings:685,appliesTo:"asset"},
+    {id:"ag53",label:"Plus Equipment Monitoring",hw:"AG53",custLabel:"Plus Equipment Monitoring",avoidCost:1403,savings:935,appliesTo:"asset"},
+  ]},
+  {id:"fleetapps",label:"Fleet Apps",options:[
+    {id:"training",label:"Connected Training",hw:"LIC-TRAINING",custLabel:"Connected Training",avoidCost:975,savings:650,appliesTo:"fleet"},
+    {id:"workflows",label:"Connected Workflows",hw:"LIC-FORMS-PREM",custLabel:"Connected Workflows",avoidCost:900,savings:600,appliesTo:"fleet"},
+  ]},
+  {id:"cam",label:"Connected Asset Maintenance",options:[
+    {id:"cam",label:"Maintenance",hw:"LIC-MAINT",custLabel:"Connected Asset Maintenance",avoidCost:1650,savings:1100,appliesTo:"both"},
+  ]},
+];
+const ALL_PRODUCTS=PRODUCT_CATEGORIES.flatMap(c=>c.options);
+const VALUE_DRIVERS=[
+  {id:"risk",label:"Reduce Risk",desc:"Improve safety, reduce accidents, lower liability",icon:Shield},
+  {id:"efficiency",label:"Increase Efficiency",desc:"Cut costs, reduce fuel waste, improve uptime",icon:TrendingUp},
+  {id:"transform",label:"Digitally Transform",desc:"Replace manual workflows with one connected platform",icon:Zap},
+];
+
+// Industry context now handled by getContext() function above
+
+// Verified case study library
+const CS={
+  allentown:{customer:"City of Allentown",stat:"Saved $1M+ with AI Dash Cams",quote:"Samsara has been a game changer for us. Across the board, it has saved us a lot of time and money."},
+  poughkeepsie:{customer:"City of Poughkeepsie",stat:"Reduced accidents by 25% in 4 months",quote:"With Samsara, it's easy to get insights into our maintenance costs and manage our spend."},
+  denver:{customer:"City & County of Denver",stat:"94% reduction in safety incidents",quote:"Last year, we achieved an overall average safety score of 95."},
+  fortlauderdale:{customer:"City of Fort Lauderdale",stat:"Reduced vehicle downtime by 28%",quote:"There are so many things we can capture in one system."},
+  sacramento:{customer:"City of Sacramento",stat:"Saved $300K annually in fuel",quote:"Having customizable data to make conclusions about our fleet is key."},
+  kalamazoo:{customer:"Road Commission of Kalamazoo County",stat:"Immediate cost savings of $60K",quote:""},
+  athens:{customer:"Athens-Clarke County Solid Waste",stat:"Improved fuel efficiency by 58%",quote:""},
+  syracuse:{customer:"City of Syracuse",stat:"30% decrease in citizen calls about service",quote:""},
+};
+// Matching matrix: industry × value driver → case study
+const CASE_STUDIES={
+  "Municipal Utilities":{risk:CS.allentown,efficiency:CS.sacramento,transform:CS.syracuse},
+  "City Fleet Services":{risk:CS.allentown,efficiency:CS.fortlauderdale,transform:CS.fortlauderdale},
+  "Public Works":{risk:CS.poughkeepsie,efficiency:CS.athens,transform:CS.syracuse},
+  "Transit Authority":{risk:CS.denver,efficiency:CS.fortlauderdale,transform:CS.syracuse},
+  "Parks & Recreation":{risk:CS.denver,efficiency:CS.fortlauderdale,transform:CS.fortlauderdale},
+  "Water/Wastewater":{risk:CS.poughkeepsie,efficiency:CS.sacramento,transform:CS.syracuse},
+  "County Government":{risk:CS.denver,efficiency:CS.kalamazoo,transform:CS.syracuse},
+  "State DOT":{risk:CS.denver,efficiency:CS.sacramento,transform:CS.syracuse},
+};
+
+const CHALLENGE_THEMES=[
+  {keywords:["accident","crash","collision","liability","insurance","claim","injury","fatality"],theme:"accident_liability"},
+  {keywords:["speed","speeding","reckless","aggressive","behavior","driving"],theme:"driver_behavior"},
+  {keywords:["fuel","gas","idle","idling","emission","mpg","cost per mile"],theme:"fuel_waste"},
+  {keywords:["equipment","find","locate","search","lost","missing","where","visibility","track"],theme:"asset_visibility"},
+  {keywords:["maintenance","breakdown","downtime","repair","shop","work order"],theme:"maintenance_reactive"},
+  {keywords:["paper","manual","spreadsheet","excel","disconnect","siloed","digital"],theme:"manual_processes"},
+  {keywords:["compliance","dvir","inspection","regulation","audit","violation","hos"],theme:"compliance_burden"},
+  {keywords:["train","training","coach","onboard","retention","turnover","driver shortage"],theme:"training_gaps"},
+  {keywords:["budget","cost","expensive","save","reduce spend","tight budget","taxpayer"],theme:"budget_pressure"},
+  {keywords:["response","dispatch","emergency","time","slow","delay"],theme:"response_time"},
+];
+const THEME_FRAGMENTS={
+  accident_liability:"reduce accident-related costs and liability exposure by proactively identifying risk before incidents occur",
+  driver_behavior:"transform driver behavior through AI-powered coaching and real-time accountability",
+  fuel_waste:"eliminate fuel waste from excessive idling, inefficient routing, and unauthorized vehicle use",
+  asset_visibility:"gain real-time visibility into every vehicle and asset so your team spends less time searching and more time serving",
+  maintenance_reactive:"shift from reactive, break-fix maintenance to a proactive, data-driven approach that prevents costly breakdowns",
+  manual_processes:"replace disconnected paper processes and spreadsheets with a single, real-time digital platform",
+  compliance_burden:"automate compliance workflows and reduce the administrative burden of inspections, audits, and regulatory reporting",
+  training_gaps:"build a structured, scalable driver training program that improves safety outcomes and supports retention",
+  budget_pressure:"deliver measurable cost savings that demonstrate responsible use of public resources",
+  response_time:"accelerate response times with real-time fleet visibility and intelligent dispatch",
+};
+function detectThemes(t){if(!t||t.trim().length<5)return[];const l=t.toLowerCase();return CHALLENGE_THEMES.filter(c=>c.keywords.some(k=>l.includes(k))).map(c=>c.theme);}
+
+const BENCHMARKS={
+  risk:{
+    cm33:[{label:"% Time Spent Speeding",industry:7,samsara:3,unit:"%",improvement:"57%"},{label:"Crash Rate (per million miles)",industry:8,samsara:3.5,unit:"",improvement:"56%"}],
+    cm34:[{label:"Harsh Events per 10K Miles",industry:70,samsara:18,unit:"",improvement:"74%"},{label:"% Time Spent Speeding",industry:7,samsara:2.5,unit:"%",improvement:"64%"}],
+    cm34_aim4:[{label:"Harsh Events per 10K Miles",industry:70,samsara:12,unit:"",improvement:"83%"},{label:"Crash Rate (per million miles)",industry:8,samsara:3,unit:"",improvement:"63%"}],
+    vg:[{label:"% Time Spent Speeding",industry:7,samsara:3.5,unit:"%",improvement:"50%"},{label:"Harsh Events per 10K Miles",industry:70,samsara:25,unit:"",improvement:"64%"}],
+    at:[{label:"Asset Recovery Rate",industry:35,samsara:85,unit:"%",improvement:"2.4x"},{label:"Manual Search Hrs / Week",industry:7,samsara:2,unit:" hrs",improvement:"71%"}],
+    ag51:[{label:"Asset Recovery Rate",industry:35,samsara:88,unit:"%",improvement:"2.5x"},{label:"Manual Search Hrs / Week",industry:7,samsara:1.5,unit:" hrs",improvement:"79%"}],
+    ag52:[{label:"Asset Recovery Rate",industry:35,samsara:92,unit:"%",improvement:"2.6x"},{label:"Utilization Rate",industry:40,samsara:65,unit:"%",improvement:"63%"}],
+    ag53:[{label:"Asset Recovery Rate",industry:35,samsara:92,unit:"%",improvement:"2.6x"},{label:"Utilization Rate",industry:40,samsara:65,unit:"%",improvement:"63%"}],
+    default:[{label:"Harsh Events per 10K Miles",industry:70,samsara:18,unit:"",improvement:"74%"},{label:"% Time Spent Speeding",industry:7,samsara:3,unit:"%",improvement:"57%"}],
+  },
+  efficiency:{
+    vg:[{label:"Idling %",industry:25,samsara:14,unit:"%",improvement:"44%"},{label:"Fuel Efficiency (MPG)",industry:8.2,samsara:9.6,unit:"",improvement:"17%"}],
+    ag52:[{label:"Utilization Rate",industry:40,samsara:64,unit:"%",improvement:"60%"},{label:"Equipment Search Time",industry:40,samsara:12,unit:" min",improvement:"70%"}],
+    ag53:[{label:"Utilization Rate",industry:40,samsara:70,unit:"%",improvement:"75%"},{label:"Unplanned Downtime",industry:18,samsara:8,unit:"%",improvement:"56%"}],
+    at:[{label:"Asset Visibility Rate",industry:35,samsara:88,unit:"%",improvement:"2.5x"},{label:"Dormancy Rate",industry:15,samsara:5,unit:"%",improvement:"67%"}],
+    ag51:[{label:"Asset Visibility Rate",industry:35,samsara:88,unit:"%",improvement:"2.5x"},{label:"Dormancy Rate",industry:15,samsara:5,unit:"%",improvement:"67%"}],
+    cam:[{label:"Unplanned Maintenance %",industry:55,samsara:25,unit:"%",improvement:"55%"},{label:"Work Order Cycle Time",industry:4,samsara:1.5,unit:" days",improvement:"63%"}],
+    default:[{label:"Idling %",industry:25,samsara:14,unit:"%",improvement:"44%"},{label:"Utilization Rate",industry:40,samsara:65,unit:"%",improvement:"63%"}],
+  },
+  transform:{
+    workflows:[{label:"DVIR Completion Rate",industry:65,samsara:97,unit:"%",improvement:"49%"},{label:"Admin Hours / Week",industry:10,samsara:3,unit:" hrs",improvement:"70%"}],
+    training:[{label:"Training Completion Rate",industry:50,samsara:88,unit:"%",improvement:"76%"},{label:"Time per Training Session",industry:2,samsara:0.75,unit:" hrs",improvement:"63%"}],
+    cam:[{label:"Work Order Cycle Time",industry:4,samsara:1.5,unit:" days",improvement:"63%"},{label:"Planned Maintenance %",industry:40,samsara:75,unit:"%",improvement:"88%"}],
+    default:[{label:"DVIR Completion Rate",industry:65,samsara:97,unit:"%",improvement:"49%"},{label:"Admin Hours / Week",industry:10,samsara:3,unit:" hrs",improvement:"70%"}],
+  },
+};
+
+function generateNarrative(fd){
+  const dk=fd.valueDrivers[0]==="Reduce Risk"?"risk":fd.valueDrivers[0]==="Increase Efficiency"?"efficiency":"transform";
+  const n=fd.customerName,s=fd.fleetSize,ha=fd.assetSize>0,p=fd.products;
+  const assetRef=ha?` and ${fd.assetSize} assets`:"";
+  let base="";let covered=[];
+  if(dk==="risk"){
+    if(p.includes("cm34_aim4")){base=`For ${n}, Samsara can cut accident frequency, liability claims, and insurance exposure across the ${s}-vehicle fleet${assetRef}. AI dual-facing cameras with 360° coverage flag risky behaviors in real time and capture exoneration footage when incidents do occur.`;covered=["accident_liability","driver_behavior"];}
+    else if(p.includes("cm34")){base=`For ${n}, Samsara can lower preventable accidents and reduce liability costs across the ${s}-vehicle fleet${assetRef}. AI dual-facing cameras coach drivers in the moment and provide video evidence that protects against false claims.`;covered=["accident_liability","driver_behavior"];}
+    else if(p.includes("cm33")){base=`For ${n}, Samsara can reduce at-fault crashes and accelerate claim resolution across the ${s}-vehicle fleet. Forward-facing AI cameras detect collision risk early and supply exoneration footage when an incident occurs.`;covered=["accident_liability"];}
+    else if(p.includes("vg")){base=`For ${n}, Samsara can lower speeding incidents and harsh-event rates across the ${s}-vehicle fleet. Real-time GPS and telemetry surface the riskiest drivers so supervisors can coach where it matters most.`;covered=["driver_behavior"];}
+    else{base=`For ${n}, Samsara turns operational data into early warnings across the ${s}-vehicle fleet${assetRef} so risk gets addressed before it becomes a claim.`;covered=["accident_liability"];}
+  }else if(dk==="efficiency"){
+    if(p.includes("vg")){base=`For ${n}, Samsara can recover fuel and labor costs lost to idling, off-route driving, and unplanned breakdowns. Real-time GPS and engine telemetry expose where the ${s}-vehicle fleet is losing time and money every day.`;covered=["fuel_waste"];}
+    else if(p.includes("ag53")||p.includes("ag52")){base=`For ${n}, Samsara can raise equipment utilization and shrink time wasted hunting for assets${ha?` across ${fd.assetSize} pieces of equipment`:""}. Connected monitoring shows where every asset is, how hard it's working, and when it needs service before it fails.`;covered=["asset_visibility","maintenance_reactive"];}
+    else if(p.includes("cam")){base=`For ${n}, Samsara can shorten work-order cycles and reduce unplanned downtime across the ${s}-vehicle fleet${assetRef}. A single maintenance platform replaces paper and disconnected systems so issues get caught and closed faster.`;covered=["maintenance_reactive","manual_processes"];}
+    else{base=`For ${n}, Samsara surfaces fuel, utilization, and uptime gaps across the ${s}-vehicle fleet${assetRef} so small fixes compound into measurable annual savings.`;covered=["fuel_waste"];}
+  }else{
+    if(p.includes("workflows")||p.includes("training")){base=`For ${n}, Samsara can free supervisors from paperwork and give leadership a real-time view of field operations across the ${s}-vehicle fleet${assetRef}. Digital inspections, training, and reporting replace clipboards and spreadsheets without changing how crews work.`;covered=["manual_processes","compliance_burden","training_gaps"];}
+    else if(p.includes("cam")){base=`For ${n}, Samsara can run maintenance as a connected workflow instead of a paper trail. One platform handles fault detection, work orders, and cost tracking so techs spend less time logging and more time fixing.`;covered=["maintenance_reactive","manual_processes"];}
+    else{base=`For ${n}, Samsara digitizes the workflows the ${s}-vehicle fleet${assetRef} runs on today, giving every stakeholder the same live data from a single platform.`;covered=["manual_processes"];}
+  }
+  const themes=detectThemes(fd.keyChallenge);
+  if(themes.length>0){const newThemes=themes.filter(t=>!covered.includes(t)).slice(0,2);const fr=newThemes.map(t=>THEME_FRAGMENTS[t]).filter(Boolean);if(fr.length===1)base+=` Beyond this, Samsara also helps ${n} ${fr[0]}.`;else if(fr.length>=2)base+=` Beyond this, Samsara also helps ${n} ${fr[0]} — and ${fr[1]}.`;}
+  if(fd.valueDrivers.length>1){const sec=fd.valueDrivers[1];if(sec==="Reduce Risk")base+=` The same platform extends to safety outcomes, protecting the workforce on the same data feed.`;else if(sec==="Increase Efficiency")base+=` That same data compounds into measurable efficiency gains across the fleet.`;else base+=` The workflows that run on top consolidate paper processes into one digital backbone.`;}
+  return base;
+}
+
+function generateSnapshot(fd){
+  const selected=fd.products.map(id=>ALL_PRODUCTS.find(p=>p.id===id)).filter(Boolean);
+  let tA=0,tS=0;
+  selected.forEach(p=>{const m=p.appliesTo==="fleet"?fd.fleetSize:p.appliesTo==="asset"?fd.assetSize:fd.fleetSize+fd.assetSize;tA+=p.avoidCost*m;tS+=p.savings*m;});
+  const dk=fd.valueDrivers[0]==="Reduce Risk"?"risk":fd.valueDrivers[0]==="Increase Efficiency"?"efficiency":"transform";
+  const eq=EQUIVALENCY[dk];const eqNum=Math.round(tS/eq.divisor);const eqText=eqNum>=2?"Equivalent to ~"+eqNum+" "+eq.label:"";
+  return{totalAvoidable:roundTo5K(tA),totalSavings:roundTo5K(tS),narrative:generateNarrative(fd),benchmarks:BENCHMARKS[dk][fd.products[0]]||BENCHMARKS[dk].default,caseStudy:CASE_STUDIES[fd.industry][dk],industryContext:getContext(fd.industry,fd.customerName),custLabels:selected.map(p=>p.custLabel),equivalency:eqText};
+}
+
+function EditableText({value,onChange,multiline=false,style={}}){
+  const[editing,setEditing]=useState(false);const[local,setLocal]=useState(value);
+  useEffect(()=>setLocal(value),[value]);
+  if(editing){const b={...style,background:"#FFFDE7",border:`2px solid ${C.amber}`,borderRadius:4,padding:"4px 8px",outline:"none",width:"100%",fontFamily:"inherit",fontSize:"inherit",color:"inherit",lineHeight:"inherit",boxSizing:"border-box",resize:"none"};
+    return multiline?<textarea autoFocus rows={4} value={local} onChange={e=>setLocal(e.target.value)} onBlur={()=>{setEditing(false);onChange(local);}} style={b}/>:<input autoFocus type="text" value={local} onChange={e=>setLocal(e.target.value)} onBlur={()=>{setEditing(false);onChange(local);}} style={b}/>;
+  }
+  return(<div onClick={()=>setEditing(true)} style={{...style,cursor:"pointer",borderRadius:3,padding:"2px 4px",margin:"0 -4px",transition:"background 0.15s"}}
+    onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,253,231,0.5)";}} onMouseLeave={e=>{e.currentTarget.style.background="transparent";}}>
+    {local}
+  </div>);
+}
+
+function Section({id,children,onDeselect,hidden}){
+  const[modal,setModal]=useState(false);const[reason,setReason]=useState("");const[custom,setCustom]=useState("");
+  const reasons=["Factually incorrect","Not relevant to this prospect","Data seems off","Other"];
+  if(hidden)return null;
+  return(
+    <div style={{position:"relative"}} onMouseEnter={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=1;}} onMouseLeave={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=0;}}>
+      <button className="ds no-print" onClick={()=>setModal(true)} style={{position:"absolute",top:4,right:4,zIndex:10,opacity:0,width:18,height:18,borderRadius:99,background:C.redBg,border:`1px solid ${C.red}30`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0,transition:"opacity 0.15s"}}><X size={9}/></button>
+      {children}
+      {modal&&(<div style={{position:"fixed",inset:0,background:"rgba(0,38,62,0.6)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:999}}>
+        <div style={{background:C.white,borderRadius:14,padding:26,maxWidth:380,width:"90%",boxShadow:"0 20px 60px rgba(0,0,0,0.25)"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}><div style={{width:30,height:30,borderRadius:99,background:"#FEF3C7",display:"flex",alignItems:"center",justifyContent:"center"}}><AlertTriangle size={15} color="#D97706"/></div><h3 style={{margin:0,fontSize:14,fontWeight:700,color:C.navy}}>Why are you removing this?</h3></div>
+          <div style={{display:"flex",flexDirection:"column",gap:5,marginBottom:10}}>{reasons.map(r=><button key={r} onClick={()=>setReason(r)} style={{padding:"8px 11px",borderRadius:7,border:`1.5px solid ${reason===r?C.navy:C.grayBorder}`,background:reason===r?C.blueBg:C.white,color:reason===r?C.navy:C.gray,fontSize:12,fontWeight:600,cursor:"pointer",textAlign:"left"}}>{r}</button>)}</div>
+          {reason==="Other"&&<textarea value={custom} onChange={e=>setCustom(e.target.value)} placeholder="Describe..." rows={2} style={{width:"100%",padding:"8px",borderRadius:7,border:`1px solid ${C.grayBorder}`,fontSize:11,fontFamily:"inherit",resize:"none",marginBottom:6,boxSizing:"border-box"}}/>}
+          <div style={{display:"flex",gap:7,marginTop:6}}>
+            <button onClick={()=>{setModal(false);setReason("");}} style={{flex:1,padding:8,borderRadius:7,border:`1px solid ${C.grayBorder}`,background:C.white,color:C.gray,fontSize:12,fontWeight:600,cursor:"pointer"}}>Cancel</button>
+            <button disabled={!reason} onClick={()=>{onDeselect(id,reason==="Other"?custom:reason);setModal(false);}} style={{flex:1,padding:8,borderRadius:7,border:"none",background:reason?C.red:"#CBD5E1",color:C.white,fontSize:12,fontWeight:700,cursor:reason?"pointer":"not-allowed"}}>Remove</button>
+          </div>
+        </div>
+      </div>)}
+    </div>);
+}
+
+function BenchBar({data}){
+  const{label,industry,samsara,unit,improvement}=data;const mx=Math.max(industry,samsara);const ip=(industry/mx)*100;const sp=(samsara/mx)*100;const fmt=v=>v>=100?v.toLocaleString():v;
+  return(<div style={{background:C.white,border:`1px solid ${C.grayBorder}`,borderRadius:8,padding:"14px 16px"}}>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+      <p style={{fontSize:9.5,fontWeight:700,color:C.dark,margin:0,textTransform:"uppercase",letterSpacing:0.5}}>{label}</p>
+      <span style={{fontSize:14,fontWeight:800,color:C.green,letterSpacing:-0.3}}>{improvement}</span>
+    </div>
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      <div><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:7.5,fontWeight:700,color:C.grayLight,textTransform:"uppercase",letterSpacing:0.8}}>Industry Average</span><span style={{fontSize:9.5,fontWeight:700,color:C.gray}}>{fmt(industry)}{unit}</span></div>
+        <div style={{height:9,background:"#E8ECF0",borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:`${ip}%`,background:C.grayLight,borderRadius:99}}/></div></div>
+      <div><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:7.5,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:0.8}}>Samsara Customer Avg.</span><span style={{fontSize:9.5,fontWeight:700,color:C.blue}}>{fmt(samsara)}{unit}</span></div>
+        <div style={{height:9,background:`${C.blue}18`,borderRadius:99,overflow:"hidden"}}><div style={{height:"100%",width:`${sp}%`,background:C.blue,borderRadius:99}}/></div></div>
+    </div>
+  </div>);
+}
+
+function App(){
+  const[phase,setPhase]=useState("intake");const[screen,setScreen]=useState(0);const[dir,setDir]=useState(1);
+  const[fd,setFd]=useState({customerName:"",industry:"",fleetSize:100,assetSize:0,products:[],valueDrivers:[],keyChallenge:"",adrName:"",adrEmail:"",adrPhone:""});
+  const[snapshot,setSnapshot]=useState(null);const[hidden,setHidden]=useState({});
+  const[editNarr,setEditNarr]=useState("");const[editCtx,setEditCtx]=useState("");const[editCTA,setEditCTA]=useState("");
+
+  const screens=[
+    {title:"Customer Name",sub:"Who is the snapshot for?"},
+    {title:"Industry Segment",sub:"Select the best match"},
+    {title:"Fleet Size",sub:"Number of vehicles"},
+    {title:"Asset Size",sub:"Non-vehicle assets (equipment, trailers, etc.)"},
+    {title:"Products In Scope",sub:"What are we positioning?"},
+    {title:"Value Drivers",sub:"What matters most? (Pick up to 2)"},
+    {title:"Key Challenge",sub:"What is the prospect dealing with today?"},
+    {title:"Review & Generate",sub:"Confirm details and generate snapshot"},
+  ];
+  const canAdvance=()=>{if(screen===0)return fd.customerName.trim().length>0;if(screen===1)return fd.industry.length>0;if(screen===2)return fd.fleetSize>0;if(screen===3)return true;if(screen===4)return fd.products.length>0;if(screen===5)return fd.valueDrivers.length>0;if(screen===6)return fd.keyChallenge.trim().length>0;if(screen===7)return fd.adrName.trim().length>0&&fd.adrEmail.trim().length>0;return true;};
+  const nav=d=>{setDir(d);setScreen(s=>s+d);};
+  const toggleProduct=id=>setFd({...fd,products:fd.products.includes(id)?fd.products.filter(x=>x!==id):[...fd.products,id]});
+  const toggleDriver=label=>{if(fd.valueDrivers.includes(label))setFd({...fd,valueDrivers:fd.valueDrivers.filter(x=>x!==label)});else if(fd.valueDrivers.length<2)setFd({...fd,valueDrivers:[...fd.valueDrivers,label]});};
+  const handleGenerate=()=>{const s=generateSnapshot(fd);setSnapshot(s);setEditNarr(s.narrative);setEditCtx(s.industryContext);setEditCTA("Reply to this email and we'll have a tailored analysis ready for your next fleet meeting. "+fd.adrName+" can walk you through what these numbers look like with your actual fleet data.");setHidden({});setPhase("snapshot");};
+  const desel=(id,r)=>setHidden(p=>({...p,[id]:r}));
+  const dateStamp=new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+  // ──── INTAKE ────
+  if(phase==="intake"){
+    return(
+      <div style={{minHeight:"100vh",background:C.navy,fontFamily:"'Helvetica Neue',Helvetica,Arial,sans-serif",display:"flex",flexDirection:"column"}}>
+        <style>{`*{box-sizing:border-box;}input:focus,select:focus,textarea:focus{outline:none;}@keyframes sIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}`}</style>
+        <div style={{padding:"18px 32px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10}}><img src={SAMSARA_LOGO_WHITE} alt="Samsara" style={{width:20,height:20}}/><span style={{fontSize:14,fontWeight:600,color:"rgba(255,255,255,0.9)",letterSpacing:0.5}}>Samsara Value Snapshot</span></div>
+          <div style={{display:"flex",gap:3}}>{screens.map((_,i)=><div key={i} style={{width:i<=screen?28:16,height:3,borderRadius:99,background:i<=screen?C.blue:"rgba(255,255,255,0.15)",transition:"all 0.3s"}}/>)}</div>
+        </div>
+        <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+          <div style={{background:C.white,borderRadius:16,boxShadow:"0 24px 80px rgba(0,0,0,0.3)",padding:"40px 44px",maxWidth:580,width:"100%",minHeight:360,display:"flex",flexDirection:"column"}}>
+            <div style={{marginBottom:28}}>
+              <p style={{fontSize:11,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:3,margin:"0 0 8px 0"}}>Step {screen+1} of {screens.length}</p>
+              <h2 style={{fontSize:24,fontWeight:700,color:C.navy,margin:"0 0 4px 0"}}>{screens[screen].title}</h2>
+              <p style={{fontSize:14,color:C.gray,margin:0}}>{screens[screen].sub}</p>
+            </div>
+            <div key={screen} style={{flex:1,animation:"sIn 0.25s ease forwards"}}>
+              {screen===0&&<input autoFocus type="text" value={fd.customerName} onChange={e=>setFd({...fd,customerName:e.target.value})} onKeyDown={e=>{if(e.key==="Enter"&&canAdvance())nav(1);}} placeholder="e.g. City of Springfield" style={{width:"100%",padding:"16px 20px",borderRadius:10,border:`2px solid ${C.grayBorder}`,fontSize:18,fontFamily:"inherit",fontWeight:500,color:C.navy}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/>}
+              {screen===1&&<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{INDUSTRIES.map(ind=><button key={ind} onClick={()=>setFd({...fd,industry:ind})} style={{padding:"13px 15px",borderRadius:10,border:`2px solid ${fd.industry===ind?C.blue:C.grayBorder}`,background:fd.industry===ind?C.blueBg:C.white,color:fd.industry===ind?C.navy:C.gray,fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"left",fontFamily:"inherit"}}>{fd.industry===ind&&<Check size={13} style={{marginRight:6,color:C.blue,verticalAlign:-2}}/>}{ind}</button>)}</div>}
+              {screen===2&&<div><input autoFocus type="number" value={fd.fleetSize} onChange={e=>setFd({...fd,fleetSize:parseInt(e.target.value)||0})} onKeyDown={e=>{if(e.key==="Enter"&&canAdvance())nav(1);}} style={{width:"100%",padding:"16px",borderRadius:10,border:`2px solid ${C.grayBorder}`,fontSize:32,fontFamily:"inherit",fontWeight:700,color:C.navy,textAlign:"center"}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/><p style={{textAlign:"center",marginTop:10,fontSize:13,color:C.gray}}>vehicles</p></div>}
+              {screen===3&&<div><input autoFocus type="number" value={fd.assetSize} onChange={e=>setFd({...fd,assetSize:parseInt(e.target.value)||0})} onKeyDown={e=>{if(e.key==="Enter")nav(1);}} style={{width:"100%",padding:"16px",borderRadius:10,border:`2px solid ${C.grayBorder}`,fontSize:32,fontFamily:"inherit",fontWeight:700,color:C.navy,textAlign:"center"}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/><p style={{textAlign:"center",marginTop:10,fontSize:13,color:C.gray}}>equipment, trailers, non-vehicle assets (0 if N/A)</p></div>}
+              {screen===4&&<div style={{display:"flex",flexDirection:"column",gap:14,maxHeight:300,overflowY:"auto",paddingRight:6}}>{PRODUCT_CATEGORIES.map(cat=>(<div key={cat.id}><p style={{fontSize:10,fontWeight:700,color:C.navy,textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 6px 0",borderBottom:`1px solid ${C.grayBorder}`,paddingBottom:4}}>{cat.label}</p><div style={{display:"flex",flexDirection:"column",gap:4}}>{cat.options.map(opt=>{const a=fd.products.includes(opt.id);return(<button key={opt.id} onClick={()=>toggleProduct(opt.id)} style={{padding:"10px 14px",borderRadius:8,border:`1.5px solid ${a?C.blue:C.grayBorder}`,background:a?C.blueBg:C.white,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center",fontFamily:"inherit",width:"100%"}}><div><span style={{fontSize:13,fontWeight:600,color:a?C.navy:C.dark}}>{opt.label}</span><span style={{fontSize:11,color:C.grayLight,marginLeft:8}}>({opt.hw})</span></div><div style={{width:20,height:20,borderRadius:5,border:`2px solid ${a?C.blue:"#D1D5DB"}`,background:a?C.blue:C.white,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{a&&<Check size={12} color={C.white}/>}</div></button>);})}</div></div>))}</div>}
+              {screen===5&&<div style={{display:"flex",flexDirection:"column",gap:8}}>{VALUE_DRIVERS.map(v=>{const Icon=v.icon;const a=fd.valueDrivers.includes(v.label);const dis=!a&&fd.valueDrivers.length>=2;return(<button key={v.id} onClick={()=>!dis&&toggleDriver(v.label)} style={{padding:"16px 18px",borderRadius:10,border:`2px solid ${a?C.navy:C.grayBorder}`,background:a?C.navy:dis?"#FAFAFA":C.white,cursor:dis?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:14,fontFamily:"inherit",opacity:dis?0.4:1,width:"100%"}}><div style={{width:36,height:36,borderRadius:8,background:a?C.blue:C.blueBg,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><Icon size={18} color={a?C.white:C.blue}/></div><div style={{textAlign:"left",flex:1}}><span style={{fontSize:15,fontWeight:700,color:a?C.white:C.dark}}>{v.label}</span><p style={{fontSize:12,color:a?"rgba(255,255,255,0.6)":C.gray,margin:"2px 0 0"}}>{v.desc}</p></div>{a&&<Check size={16} color={C.white}/>}</button>);})}</div>}
+              {screen===6&&<textarea autoFocus value={fd.keyChallenge} onChange={e=>setFd({...fd,keyChallenge:e.target.value})} placeholder="e.g. We need to reduce accident liability costs and can't locate our equipment" style={{width:"100%",padding:"16px 20px",borderRadius:10,border:`2px solid ${C.grayBorder}`,fontSize:15,fontFamily:"inherit",color:C.navy,height:120,resize:"none",lineHeight:1.6}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/>}
+              {screen===7&&<div><div style={{background:C.blueBg,borderRadius:10,padding:"18px 22px",marginBottom:16}}><div style={{display:"grid",gridTemplateColumns:"90px 1fr",gap:"8px 14px",fontSize:13}}><span style={{fontWeight:700,color:C.gray}}>Customer</span><span style={{fontWeight:600,color:C.navy}}>{fd.customerName}</span><span style={{fontWeight:700,color:C.gray}}>Industry</span><span style={{fontWeight:600,color:C.navy}}>{fd.industry}</span><span style={{fontWeight:700,color:C.gray}}>Fleet</span><span style={{fontWeight:600,color:C.navy}}>{fd.fleetSize} vehicles</span><span style={{fontWeight:700,color:C.gray}}>Assets</span><span style={{fontWeight:600,color:C.navy}}>{fd.assetSize} assets</span><span style={{fontWeight:700,color:C.gray}}>Products</span><span style={{fontWeight:600,color:C.navy,lineHeight:1.5}}>{fd.products.map(id=>{const p=ALL_PRODUCTS.find(x=>x.id===id);return p?p.label+" ("+p.hw+")":id;}).join(", ")}</span><span style={{fontWeight:700,color:C.gray}}>Drivers</span><span style={{fontWeight:600,color:C.navy}}>{fd.valueDrivers.join(", ")}</span><span style={{fontWeight:700,color:C.gray}}>Challenge</span><span style={{fontWeight:600,color:C.navy}}>{fd.keyChallenge}</span></div></div><p style={{fontSize:11,fontWeight:700,color:C.navy,marginBottom:10}}>Your Contact Info (appears on the snapshot)</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}><div><label style={{fontSize:11,fontWeight:600,color:C.gray,display:"block",marginBottom:4}}>Name *</label><input type="text" value={fd.adrName} onChange={e=>setFd({...fd,adrName:e.target.value})} placeholder="Jane Smith" style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"2px solid "+C.grayBorder,fontSize:14,fontFamily:"inherit",color:C.navy}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/></div><div><label style={{fontSize:11,fontWeight:600,color:C.gray,display:"block",marginBottom:4}}>Email *</label><input type="email" value={fd.adrEmail} onChange={e=>setFd({...fd,adrEmail:e.target.value})} placeholder="jane@samsara.com" style={{width:"100%",padding:"10px 14px",borderRadius:8,border:"2px solid "+C.grayBorder,fontSize:14,fontFamily:"inherit",color:C.navy}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/></div></div><div style={{marginTop:10}}><label style={{fontSize:11,fontWeight:600,color:C.gray,display:"block",marginBottom:4}}>Phone (optional)</label><input type="tel" value={fd.adrPhone} onChange={e=>setFd({...fd,adrPhone:e.target.value})} placeholder="(555) 123-4567" style={{width:"50%",padding:"10px 14px",borderRadius:8,border:"2px solid "+C.grayBorder,fontSize:14,fontFamily:"inherit",color:C.navy}} onFocus={e=>e.target.style.borderColor=C.blue} onBlur={e=>e.target.style.borderColor=C.grayBorder}/></div></div>}
+            </div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:28,paddingTop:18,borderTop:`1px solid ${C.grayBorder}`}}>
+              <button onClick={()=>screen>0&&nav(-1)} disabled={screen===0} style={{display:"flex",alignItems:"center",gap:5,padding:"10px 18px",borderRadius:8,border:"none",background:screen>0?C.blueBg:"transparent",color:screen>0?C.navy:"transparent",fontSize:13,fontWeight:600,cursor:screen>0?"pointer":"default",fontFamily:"inherit"}}><ChevronLeft size={15}/> Back</button>
+              {screen<7?<button onClick={()=>canAdvance()&&nav(1)} disabled={!canAdvance()} style={{display:"flex",alignItems:"center",gap:6,padding:"12px 28px",borderRadius:8,border:"none",background:canAdvance()?C.blue:"#CBD5E1",color:C.white,fontSize:14,fontWeight:700,cursor:canAdvance()?"pointer":"not-allowed",fontFamily:"inherit"}}>Continue <ChevronRight size={16}/></button>
+              :<button onClick={handleGenerate} style={{display:"flex",alignItems:"center",gap:6,padding:"13px 32px",borderRadius:8,border:"none",background:C.blue,color:C.white,fontSize:15,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>Generate Snapshot <ChevronRight size={17}/></button>}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ──── SNAPSHOT (Matching PPT mockup layout exactly) ────
+  const s=snapshot;
+
+  return(
+    <div style={{minHeight:"100vh",background:"#C8CED6",fontFamily:"'Helvetica Neue',Helvetica,Arial,sans-serif"}}>
+      <style>{`*{box-sizing:border-box;}@media print{.no-print{display:none!important;}body,html{margin:0;padding:0;background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact;}.snap{box-shadow:none!important;margin:0!important;border-radius:0!important;width:11in!important;height:8.5in!important;padding:0.35in 0.45in!important;}@page{size:11in 8.5in landscape;margin:0;}}`}</style>
+
+      <div className="no-print" style={{background:C.navy,padding:"10px 20px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><img src={SAMSARA_LOGO_WHITE} alt="Samsara" style={{width:18,height:18}}/><span style={{fontSize:13,fontWeight:600,color:"rgba(255,255,255,0.7)"}}>Value Snapshot Generator</span></div>
+        <div style={{display:"flex",gap:8}}>
+          <button onClick={()=>{setPhase("intake");setScreen(0);}} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 14px",borderRadius:6,border:"1px solid rgba(255,255,255,0.2)",background:"transparent",color:"rgba(255,255,255,0.75)",fontSize:12,fontWeight:600,cursor:"pointer",fontFamily:"inherit"}}><RotateCcw size={12}/> New Snapshot</button>
+          <button onClick={()=>{const t=document.title;document.title=fd.customerName.replace(/\s+/g,'_')+'_Samsara Value Snapshot';window.print();document.title=t;}} style={{display:"flex",alignItems:"center",gap:5,padding:"7px 18px",borderRadius:6,border:"none",background:C.blue,color:C.white,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}><Download size={12}/> Download PDF</button>
+        </div>
+      </div>
+      <div className="no-print" style={{maxWidth:1100,margin:"6px auto 4px",padding:"0 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <p style={{fontSize:11,color:C.gray,fontStyle:"italic",margin:0}}>Click text to edit · Hover sections to remove · Numbers are locked</p>
+        {Object.keys(hidden).length>0&&<button onClick={()=>setHidden({})} style={{fontSize:10,color:C.blue,background:"none",border:"none",cursor:"pointer",fontWeight:700,fontFamily:"inherit"}}>Restore all</button>}
+      </div>
+
+      {/* ════════ SNAPSHOT PAGE — CSS GRID LAYOUT ════════ */}
+      <div className="snap" style={{width:1076,aspectRatio:"11/8.5",margin:"2px auto 24px",background:C.white,borderRadius:3,boxShadow:"0 4px 28px rgba(0,0,0,0.12)",padding:"28px 36px",display:"grid",gridTemplateRows:"auto auto auto 9fr 11fr auto",gap:0,overflow:"hidden"}}>
+
+        {/* ROW 0: HEADER */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}><img src={SAMSARA_LOGO_DARK} alt="Samsara" style={{width:24,height:24}}/><span style={{fontSize:14,fontWeight:700,color:C.navy,letterSpacing:-0.3}}>Samsara</span></div>
+            <span style={{fontSize:17,fontWeight:700,color:C.navy}}>Value Snapshot</span>
+            <span style={{fontSize:9,color:C.grayLight,fontWeight:500,marginLeft:4}}>{dateStamp}</span>
+          </div>
+          <div style={{textAlign:"right"}}><p style={{fontSize:8,fontWeight:600,color:C.grayLight,textTransform:"uppercase",letterSpacing:2,margin:"0 0 1px 0"}}>Prepared For</p><p style={{fontSize:15,fontWeight:700,color:C.navy,margin:0}}>{fd.customerName}</p><p style={{fontSize:10,fontWeight:600,color:C.gray,margin:"2px 0 0 0"}}>{fd.industry}</p><p style={{fontSize:9,color:C.grayLight,margin:"2px 0 0 0"}}>{fd.fleetSize}-vehicle fleet{fd.assetSize>0?` · ${fd.assetSize} assets`:""}</p></div>
+        </div>
+
+        {/* ROW 1: DIVIDER */}
+        <div style={{height:3,background:`linear-gradient(90deg,${C.blue},${C.blueLight})`,borderRadius:99,marginBottom:8}}/>
+
+        {/* ROW 2: OVERVIEW — auto height, no stretching */}
+        {!hidden.ctx && (
+          <div style={{position:"relative",marginBottom:8}} onMouseEnter={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=1;}} onMouseLeave={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=0;}}>
+            <button className="ds no-print" onClick={()=>desel("ctx","removed")} style={{position:"absolute",top:4,right:4,zIndex:10,opacity:0,width:18,height:18,borderRadius:99,background:C.redBg,border:`1px solid ${C.red}30`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0,transition:"opacity 0.15s"}}><X size={9}/></button>
+            <div style={{background:C.blueBg,padding:"8px 14px",borderRadius:5,borderLeft:`4px solid ${C.blue}`}}>
+              <EditableText value={editCtx} onChange={setEditCtx} multiline style={{fontSize:10,color:C.dark,lineHeight:1.55,fontStyle:"italic"}}/>
+            </div>
+          </div>
+        )}
+        {hidden.ctx && <div/>}
+
+        {/* ROW 3 (1fr): Narrative | Avoidable | Savings */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8,minHeight:0}}>
+          {/* LEFT: Narrative */}
+          {!hidden.narr ? (
+            <div style={{position:"relative",minHeight:0}} onMouseEnter={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=1;}} onMouseLeave={e=>{const b=e.currentTarget.querySelector('.ds');if(b)b.style.opacity=0;}}>
+              <button className="ds no-print" onClick={()=>desel("narr","removed")} style={{position:"absolute",top:4,right:4,zIndex:10,opacity:0,width:18,height:18,borderRadius:99,background:C.redBg,border:`1px solid ${C.red}30`,color:C.red,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",padding:0,transition:"opacity 0.15s"}}><X size={9}/></button>
+              <div style={{background:C.blueBg,padding:"14px 16px",borderRadius:8,height:"100%",display:"flex",flexDirection:"column",overflow:"hidden"}}>
+                <h3 style={{fontSize:8.5,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:2,margin:"0 0 8px 0",flexShrink:0,display:"flex",alignItems:"center",gap:6}}><Shield size={11} color={C.blue}/>How Samsara Can Help You</h3>
+                <div style={{fontSize:10.5,color:C.dark,lineHeight:1.65,overflow:"hidden"}}><EditableText value={editNarr} onChange={setEditNarr} multiline style={{fontSize:10.5,color:C.dark,lineHeight:1.65}}/></div>
+                <div style={{marginTop:"auto",paddingTop:10,borderTop:`1px solid ${C.blue}20`,flexShrink:0}}>
+                  <p style={{fontSize:7.5,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 6px 0"}}>Solution Scope</p>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:"4px 12px"}}>
+                    {s.custLabels.map((label,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:5}}>
+                        <div style={{width:4,height:4,background:C.blue,borderRadius:99,flexShrink:0}}/>
+                        <span style={{fontSize:9,color:C.dark,fontWeight:500}}>{label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : <div/>}
+
+          {/* RIGHT: Two financial cards */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,minHeight:0}}>
+            {!hidden.avoid ? (
+              <div style={{background:C.redBg,borderRadius:8,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"center",minHeight:0}}>
+                <p style={{fontSize:7.5,fontWeight:700,color:C.red,textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 6px 0",minHeight:24,lineHeight:1.4}}>Estimated Avoidable Costs Today</p>
+                <p style={{fontSize:28,fontWeight:700,color:C.red,margin:"0 0 10px 0",letterSpacing:-0.5,lineHeight:1}}>~${s.totalAvoidable.toLocaleString()}</p>
+                <p style={{fontSize:7.5,color:C.red+"70",margin:"auto 0 0 0"}}>{fd.fleetSize} vehicles{fd.assetSize>0?" · "+fd.assetSize+" assets":""}</p>
+              </div>
+            ) : <div/>}
+            {!hidden.savings ? (
+              <div style={{background:C.greenBg,borderRadius:8,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"center",minHeight:0}}>
+                <p style={{fontSize:7.5,fontWeight:700,color:C.green,textTransform:"uppercase",letterSpacing:1.5,margin:"0 0 6px 0",minHeight:24,lineHeight:1.4}}>Estimated Annual Savings with Samsara</p>
+                <p style={{fontSize:28,fontWeight:700,color:C.green,margin:"0 0 6px 0",letterSpacing:-0.5,lineHeight:1}}>~${s.totalSavings.toLocaleString()}</p>
+                {s.equivalency&&<p style={{fontSize:8.5,fontWeight:600,color:C.green,margin:"0 0 6px 0",fontStyle:"italic"}}>{s.equivalency}</p>}
+                <p style={{fontSize:7.5,color:C.green+"70",margin:"auto 0 0 0"}}>{fd.fleetSize} vehicles{fd.assetSize>0?" · "+fd.assetSize+" assets":""}</p>
+              </div>
+            ) : <div/>}
+          </div>
+        </div>
+
+        {/* ROW 4 (1fr): Benchmarks | Case Study + Next Steps */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,minHeight:0}}>
+          {/* LEFT: Benchmarks */}
+          {!hidden.bench ? (
+            <div style={{display:"flex",flexDirection:"column",minHeight:0,overflow:"hidden"}}>
+              <h3 style={{fontSize:8.5,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:2,margin:"0 0 8px 0",flexShrink:0,display:"flex",alignItems:"center",gap:6}}><BarChart3 size={11} color={C.blue}/>How Samsara Customers Perform</h3>
+              <div style={{display:"flex",flexDirection:"column",gap:8,flex:1,overflow:"hidden"}}>
+                {s.benchmarks.map((b,i)=><BenchBar key={i} data={b}/>)}
+              </div>
+            </div>
+          ) : <div/>}
+
+          {/* RIGHT: Case Study + Next Steps stacked */}
+          <div style={{display:"grid",gridTemplateRows:"1fr 1fr",gap:8,minHeight:0}}>
+            {!hidden.case ? (
+              <div style={{background:C.navy,color:C.white,padding:"14px 16px",borderRadius:8,display:"flex",flexDirection:"column",justifyContent:"center",overflow:"hidden",minHeight:0}}>
+                <h3 style={{fontSize:8.5,fontWeight:700,opacity:0.5,textTransform:"uppercase",letterSpacing:2,margin:"0 0 8px 0",display:"flex",alignItems:"center",gap:6}}><BookOpen size={11}/>Case Study Spotlight</h3>
+                <p style={{fontSize:12,fontWeight:700,margin:"0 0 3px 0"}}>{s.caseStudy.customer}</p>
+                <p style={{fontSize:12,fontWeight:700,color:C.blueLight,margin:"0 0 6px 0"}}>{s.caseStudy.stat}</p>
+                {s.caseStudy.quote?<p style={{fontSize:10,fontStyle:"italic",opacity:0.75,lineHeight:1.5,margin:0}}>"{s.caseStudy.quote}"</p>:<p style={{fontSize:9,opacity:0.5,margin:0}}>Results verified from published Samsara case study</p>}
+              </div>
+            ) : <div/>}
+            {!hidden.cta ? (
+              <div style={{background:C.blueBg,border:`1.5px solid ${C.blue}25`,borderRadius:8,padding:"14px 16px",display:"flex",flexDirection:"column",justifyContent:"center",overflow:"hidden",minHeight:0}}>
+                <h3 style={{fontSize:8.5,fontWeight:700,color:C.blue,textTransform:"uppercase",letterSpacing:2,margin:"0 0 6px 0",display:"flex",alignItems:"center",gap:6}}><ArrowRight size={11} color={C.blue}/>Next Steps</h3>
+                <EditableText value={editCTA} onChange={setEditCTA} multiline style={{fontSize:10,color:C.dark,lineHeight:1.55}}/>
+                {fd.adrName&&<div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${C.blue}20`,display:"flex",alignItems:"center",gap:8}}>
+                  <Phone size={10} color={C.blue}/>
+                  <div><p style={{fontSize:9,fontWeight:700,color:C.navy,margin:0}}>{fd.adrName}</p><p style={{fontSize:8.5,color:C.gray,margin:0}}>{fd.adrEmail}{fd.adrPhone?" · "+fd.adrPhone:""}</p></div>
+                </div>}
+              </div>
+            ) : <div/>}
+          </div>
+        </div>
+
+        {/* ROW 5: FOOTER */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${C.grayBorder}`,paddingTop:8,marginTop:8}}>
+          <p style={{fontSize:7,fontWeight:500,color:C.grayLight,margin:0}}>Based on Samsara platform data across similar fleet profiles. Individual results may vary.</p>
+          <div style={{display:"flex",alignItems:"center",gap:5}}><img src={SAMSARA_LOGO_DARK} alt="Samsara" style={{width:14,height:14}}/><span style={{fontSize:9,fontWeight:700,color:C.navy,letterSpacing:1}}>SAMSARA</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
