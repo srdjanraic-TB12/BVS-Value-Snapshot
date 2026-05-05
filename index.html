@@ -99,6 +99,7 @@ function getContext(industry, name) {
     "Parks & Recreation": `${name}'s parks and recreation operations manage sprawling vehicle and equipment fleets across dispersed locations, making visibility, accountability, and maintenance coordination a constant challenge.`,
     "Water/Wastewater": `As a water and wastewater utility, ${name} operates around the clock with crews responding to emergencies across wide service areas — where every minute of response time matters and fleet visibility is critical.`,
     "County Government": `${name} oversees diverse fleet operations spanning law enforcement, public works, social services, and emergency response — requiring unified visibility across siloed departments.`,
+    "Emergency Services": `As an emergency services operation, ${name} must protect first responders, maintain fleet readiness, and ensure the fastest possible response times — all while managing high-mileage vehicles and equipment, aggressive driving conditions, and intense public accountability.`,
     "State DOT": `${name} manages one of the largest and most complex public fleets in the state, with seasonal demands, vast geographic coverage, and intense public accountability for safety and spending.`,
   };
   return m[industry] || "";
@@ -144,6 +145,8 @@ const CS = {
   kalamazoo: { customer: "Road Commission of Kalamazoo County", stat: "Immediate cost savings of $60K", quote: "" },
   athens: { customer: "Athens-Clarke County Solid Waste", stat: "Improved fuel efficiency by 58%", quote: "" },
   syracuse: { customer: "City of Syracuse", stat: "30% decrease in citizen calls about service", quote: "" },
+  noems: { customer: "New Orleans EMS", stat: "81% reduction in collision risk", quote: "We now have full, real-time visibility across our operations." },
+  coxhealth: { customer: "CoxHealth EMS", stat: "94% reduction in maintenance processing time", quote: "Samsara has done wonders for us." },
 };
 const CASE_STUDIES = {
   "Municipal Utilities": { risk: CS.allentown, efficiency: CS.sacramento, transform: CS.syracuse },
@@ -154,6 +157,7 @@ const CASE_STUDIES = {
   "Water/Wastewater": { risk: CS.poughkeepsie, efficiency: CS.sacramento, transform: CS.syracuse },
   "County Government": { risk: CS.denver, efficiency: CS.kalamazoo, transform: CS.syracuse },
   "State DOT": { risk: CS.denver, efficiency: CS.sacramento, transform: CS.syracuse },
+  "Emergency Services": { risk: CS.noems, efficiency: CS.coxhealth, transform: CS.coxhealth },
 };
 
 const CHALLENGE_THEMES = [
