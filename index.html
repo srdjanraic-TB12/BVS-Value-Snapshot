@@ -776,6 +776,31 @@ const EMPTY_FD = {
 };
 
 // ─── App: intake form (preserved) → snapshot output ────────────────────────
+
+// ─── Snapshot Tracking (silent Google Forms submission) ─────────────
+function trackSnapshot(fd, snapshot, version) {
+  try {
+    const url = "https://docs.google.com/forms/d/e/1FAIpQLSedPKQsZWxMgQYavf9uBugTQ6yaJKnY9xdQKVcEcwaZw6C9iA/formResponse";
+    const params = new URLSearchParams();
+    params.append("entry.432669713", fd.customerName);
+    params.append("entry.827968877", fd.industry);
+    params.append("entry.625600488", String(fd.fleetSize));
+    params.append("entry.1542132547", String(fd.assetSize));
+    params.append("entry.1520895472", fd.products.map(id => {
+      const p = ALL_PRODUCTS.find(x => x.id === id);
+      return p ? p.label : id;
+    }).join(", "));
+    params.append("entry.1509866571", fd.valueDrivers[0] || "");
+    params.append("entry.1171657357", fd.keyChallenge);
+    params.append("entry.345104235", "$" + snapshot.totalAvoidable.toLocaleString());
+    params.append("entry.1954234826", "$" + snapshot.totalSavings.toLocaleString());
+    params.append("entry.253695490", fd.adrName);
+    params.append("entry.766788548", fd.adrEmail);
+    params.append("entry.1625502066", version);
+    fetch(url, { method: "POST", mode: "no-cors", body: params });
+  } catch(e) { /* silent fail — tracking should never break the app */ }
+}
+
 function App() {
   const [phase, setPhase] = useState("intake");
   const [screen, setScreen] = useState(0);
@@ -824,6 +849,7 @@ function App() {
       fd.adrName + " can walk you through what these numbers look like with your actual fleet data.");
     setHidden({});
     setPhase("snapshot");
+    trackSnapshot(fd, s, "v2-design");
   };
   const desel = (id, r) => setHidden(p => ({ ...p, [id]: r }));
 
