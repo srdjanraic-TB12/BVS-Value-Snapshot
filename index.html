@@ -768,12 +768,283 @@ function SnapshotPage({ fd, snapshot, hidden, desel,
   );
 }
 
+// ─── TalkingPointsPage: internal-facing companion doc (portrait, Word-doc style) ─
+function TalkingPointsPage({ fd, talkingPoints }) {
+  if (!talkingPoints) return null;
+  const tp = talkingPoints;
+  const sectionHeader = {
+    fontSize: 13, fontWeight: 800, color: C.navy, margin: "0 0 8px 0",
+    paddingBottom: 6, borderBottom: "2px solid " + C.blue,
+    letterSpacing: 0.2
+  };
+  const sectionWrap = { marginBottom: 20 };
+  return (
+    <div className="talking-page" style={{
+      width: 816, // 8.5" at ~96dpi
+      aspectRatio: "8.5 / 11",
+      margin: "20px auto",
+      background: "#fff",
+      borderRadius: 8,
+      boxShadow: "0 8px 32px rgba(15, 23, 42, 0.18)",
+      padding: "0.5in 0.6in",
+      overflow: "hidden",
+      fontFamily: "'Helvetica Neue',Helvetica,Arial,sans-serif"
+    }}>
+      {/* Navy header bar */}
+      <header style={{
+        background: C.navy, color: "#fff",
+        borderRadius: 6, padding: "14px 18px", marginBottom: 18
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <div>
+            <p style={{ fontSize: 8.5, fontWeight: 700, color: C.blueLight,
+              letterSpacing: 2.5, textTransform: "uppercase", margin: 0 }}>
+              ADR Talking Points — Internal Only
+            </p>
+            <p style={{ fontSize: 18, fontWeight: 700, margin: "3px 0 0 0" }}>
+              {tp.header.account}
+            </p>
+          </div>
+          <div style={{
+            background: C.blue, color: "#fff", padding: "4px 10px",
+            borderRadius: 4, fontSize: 9, fontWeight: 700,
+            letterSpacing: 1, textTransform: "uppercase"
+          }}>
+            For: {tp.header.role}
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: "4px 12px", fontSize: 10,
+          paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.15)" }}>
+          <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, fontSize: 8.5 }}>
+            Segment
+          </span>
+          <span style={{ color: "#fff", fontWeight: 600 }}>{tp.header.segment}</span>
+          <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, fontSize: 8.5 }}>
+            Products
+          </span>
+          <span style={{ color: "#fff", fontWeight: 600 }}>{tp.header.products}</span>
+          <span style={{ color: "rgba(255,255,255,0.5)", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, fontSize: 8.5 }}>
+            Challenge
+          </span>
+          <span style={{ color: "#fff", fontWeight: 500, fontStyle: "italic" }}>
+            "{tp.header.challenge}"
+          </span>
+        </div>
+      </header>
+
+      {/* Section 1: Math */}
+      <section style={sectionWrap}>
+        <h3 style={sectionHeader}>1. How the Savings Number Was Built</h3>
+        <p style={{ fontSize: 11, color: C.dark, lineHeight: 1.6, margin: 0 }}>
+          {tp.section1}
+        </p>
+      </section>
+
+      {/* Section 2: Talking Points */}
+      <section style={sectionWrap}>
+        <h3 style={sectionHeader}>2. Lead With These on a Callback</h3>
+        <ol style={{ margin: 0, padding: 0, listStyle: "none", counterReset: "tp" }}>
+          {tp.section2.map((point, i) => (
+            <li key={i} style={{
+              fontSize: 11, color: C.dark, lineHeight: 1.55, marginBottom: 8,
+              display: "flex", gap: 10
+            }}>
+              <span style={{
+                color: C.blue, fontWeight: 800, flexShrink: 0,
+                minWidth: 18
+              }}>{i + 1}.</span>
+              <span>{point}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Section 3: Objections */}
+      <section style={sectionWrap}>
+        <h3 style={sectionHeader}>3. Anticipated Objections & Responses</h3>
+        {tp.section3.map((obj, i) => (
+          <div key={i} style={{
+            marginBottom: 10,
+            background: "#FFF8E1",
+            borderLeft: "3px solid " + C.amber,
+            borderRadius: 4,
+            padding: "8px 12px"
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.navy, margin: "0 0 4px 0" }}>
+              "{obj.objection}"
+            </p>
+            <p style={{ fontSize: 10.5, color: C.dark, lineHeight: 1.55, margin: 0 }}>
+              <span style={{ color: C.gray, fontWeight: 700 }}>→ </span>
+              {obj.response}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      {/* Section 4: Follow-up questions */}
+      <section style={sectionWrap}>
+        <h3 style={sectionHeader}>4. If They Engage, Ask These</h3>
+        <ol style={{ margin: 0, padding: 0, listStyle: "none" }}>
+          {tp.section4.map((q, i) => (
+            <li key={i} style={{
+              fontSize: 11, color: C.dark, lineHeight: 1.55, marginBottom: 8,
+              display: "flex", gap: 10
+            }}>
+              <span style={{
+                color: C.green, fontWeight: 800, flexShrink: 0,
+                minWidth: 18
+              }}>{i + 1}.</span>
+              <span style={{ fontStyle: "italic" }}>{q}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Footer */}
+      <div style={{
+        marginTop: "auto", paddingTop: 12,
+        borderTop: "1px solid " + C.grayBorder,
+        display: "flex", justifyContent: "space-between", alignItems: "center"
+      }}>
+        <p style={{ fontSize: 8, color: C.gray, margin: 0, fontStyle: "italic" }}>
+          Internal preparation document. Not for prospect distribution.
+        </p>
+        <span style={{ fontSize: 8.5, fontWeight: 700, color: C.navy, letterSpacing: 1 }}>
+          SAMSARA · BVS
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Demo prefill so the snapshot is the default landing view ──────────────
 const EMPTY_FD = {
   customerName: "", industry: "", fleetSize: 100, assetSize: 0,
   products: [], valueDrivers: [], keyChallenge: "",
   adrName: "", adrEmail: "", adrPhone: "",
+  role: "ADR",
 };
+
+// ─── Role-based Talking Points Engine ──────────────────────────────────────
+// Architecture: ROLE_TEMPLATES maps role names to generator functions.
+// Adding a future role = write a new generator + flip null to the function ref + enable checkbox.
+// No engine changes required.
+
+function generateADRTalkingPoints(fd, snapshot) {
+  const n = fd.customerName, s = fd.fleetSize, ha = fd.assetSize > 0;
+  const p = fd.products, dk = fd.valueDrivers[0];
+  const totalProducts = p.map(id => {
+    const prod = ALL_PRODUCTS.find(x => x.id === id);
+    return prod ? prod.label : id;
+  }).join(", ");
+
+  // Section 1: How the savings number was built
+  const benchmark1 = snapshot.benchmarks[0];
+  const benchmark2 = snapshot.benchmarks[1];
+  const driverFraming = dk === "Reduce Risk"
+    ? `accident reduction and liability cost avoidance`
+    : dk === "Increase Efficiency"
+    ? `fuel, utilization, and uptime improvements`
+    : `digitization of manual workflows and admin time recovery`;
+
+  const section1 = `The ~$${snapshot.totalSavings.toLocaleString()} projected savings assumes a ${s}-vehicle fleet${ha ? ` and ${fd.assetSize} assets` : ""} with ${totalProducts}. The number is built from ${driverFraming} benchmarks — specifically, ${benchmark1.label.toLowerCase()} dropping from ${benchmark1.industry}${benchmark1.unit} (industry average) to ${benchmark1.samsara}${benchmark1.unit} (Samsara customers) — applied to typical ${fd.industry.toLowerCase()} cost structures. It's deliberately conservative. Real savings depend on the prospect's current state, which a deeper analysis would surface.`;
+
+  // Section 2: Talking points (3-5, driver and product-aware)
+  const talkingPoints = [];
+
+  if (dk === "Reduce Risk") {
+    if (p.includes("cm34") || p.includes("cm34_aim4") || p.includes("cm33")) {
+      talkingPoints.push(`${fd.industry} fleets typically see harsh events at ${benchmark1.industry === 70 ? "70" : benchmark1.industry} per 10,000 miles. Samsara customers in similar segments cut that to ${benchmark1.samsara}. That's where most of the safety savings come from.`);
+      talkingPoints.push(`The video evidence side often closes deals on its own. One captured incident that exonerates a driver can pay for the whole deployment.`);
+      talkingPoints.push(`AI cameras don't just monitor, they coach drivers in real time. Most public sector customers see meaningful behavior change within 60 to 90 days.`);
+    } else if (p.includes("vg")) {
+      talkingPoints.push(`Speeding sits around ${benchmark1.industry}${benchmark1.unit} of drive time industry-wide. Samsara customers operate at ${benchmark1.samsara}${benchmark1.unit}. That's not just safety, it's wear, insurance, and citizen complaints.`);
+      talkingPoints.push(`GPS visibility surfaces the riskiest drivers so supervisors can coach where it matters most. It's not about catching people, it's about closing the loop on behavior.`);
+    }
+    talkingPoints.push(`Liability costs are the line item most fleet managers can't directly control today. This is the lever that changes that.`);
+  } else if (dk === "Increase Efficiency") {
+    if (p.includes("vg")) {
+      talkingPoints.push(`Public sector fleets average ${benchmark1.industry}${benchmark1.unit} idling time. Samsara customers run at ${benchmark1.samsara}${benchmark1.unit}. On fuel alone that adds up fast for a ${s}-vehicle fleet.`);
+      talkingPoints.push(`The ROI usually shows up first in fuel, second in maintenance, third in productivity. All three compound.`);
+    }
+    if (p.includes("ag52") || p.includes("ag53") || p.includes("ag51") || p.includes("at")) {
+      talkingPoints.push(`Asset utilization rates in your segment hover around ${benchmark2 ? benchmark2.industry : 40}${benchmark2 ? benchmark2.unit : "%"}. Samsara customers see ${benchmark2 ? benchmark2.samsara : 65}${benchmark2 ? benchmark2.unit : "%"}. Most fleets don't realize how much idle equipment costs them every month.`);
+      talkingPoints.push(`Equipment that sits unused depreciates anyway. Connected monitoring turns that hidden cost into a measurable line item.`);
+    }
+    talkingPoints.push(`Every percentage point you recover compounds annually. The ~$${snapshot.totalSavings.toLocaleString()} number is year one, not lifetime.`);
+  } else {
+    talkingPoints.push(`Most ${fd.industry.toLowerCase()} operations still run on paper and spreadsheets. The hidden cost isn't the paper, it's the time your supervisors lose to admin.`);
+    talkingPoints.push(`DVIR completion rates in your segment average around ${benchmark1.industry}${benchmark1.unit}. Samsara customers hit ${benchmark1.samsara}${benchmark1.unit}. That's compliance plus liability protection in one move.`);
+    talkingPoints.push(`The transformation story isn't about replacing what works, it's about connecting what doesn't talk to each other today.`);
+  }
+
+  // Add equivalency-based talking point if applicable
+  if (snapshot.equivalency) {
+    talkingPoints.push(`The ~$${snapshot.totalSavings.toLocaleString()} number ${snapshot.equivalency.toLowerCase()}. That makes the abstract concrete when you talk to someone in finance.`);
+  }
+
+  // Cap at 5
+  const finalTalkingPoints = talkingPoints.slice(0, 5);
+
+  // Section 3: Objections
+  const objections = [
+    {
+      objection: "There's no way we save that much.",
+      response: "I hear that a lot. The number is conservative on purpose. Real savings depend on your current camera coverage, incident frequency, and how much your team spends on accident-related costs today. Happy to walk through the math."
+    },
+    {
+      objection: "We already have GPS.",
+      response: "Most legacy GPS just shows location on a map. This is operational data, fuel, behavior, asset health, all connected in one platform. Different category of value."
+    },
+    {
+      objection: "We don't have budget for this.",
+      response: "Most public sector agencies don't fund this from a new IT line, they fund it from accident liability or fuel reduction. The numbers in this snapshot show exactly why."
+    }
+  ];
+
+  // Section 4: Follow-up questions
+  const followUps = [];
+  if (dk === "Reduce Risk") {
+    followUps.push("What's your current process for reviewing harsh driving events when they happen?");
+    followUps.push("How are accident-related costs tracked in your budget today?");
+    followUps.push("Walk me through what happens after a vehicle incident from your team's perspective.");
+  } else if (dk === "Increase Efficiency") {
+    followUps.push("How are you measuring fleet utilization today, if at all?");
+    followUps.push("When was the last time a piece of equipment went missing or wasn't available when crews needed it?");
+    followUps.push("Where does most of your fleet operating budget go — fuel, maintenance, labor, or something else?");
+  } else {
+    followUps.push("How much time does your team spend on DVIRs, inspections, and reporting each week?");
+    followUps.push("Walk me through how data moves from the field to the front office today.");
+    followUps.push("If you could fix one thing about your fleet operations tomorrow, what would it be?");
+  }
+
+  return {
+    header: {
+      account: fd.customerName,
+      segment: fd.industry,
+      products: totalProducts,
+      challenge: fd.keyChallenge,
+      role: "ADR"
+    },
+    section1: section1,
+    section2: finalTalkingPoints,
+    section3: objections,
+    section4: followUps
+  };
+}
+
+const ROLE_TEMPLATES = {
+  ADR: generateADRTalkingPoints,
+  AE: null,
+  Marketing: null,
+  Other: null
+};
+
+function generateTalkingPoints(fd, snapshot) {
+  const generator = ROLE_TEMPLATES[fd.role];
+  if (!generator) return null;
+  return generator(fd, snapshot);
+}
 
 // ─── App: intake form (preserved) → snapshot output ────────────────────────
 
@@ -806,6 +1077,7 @@ function App() {
   const [screen, setScreen] = useState(0);
   const [fd, setFd] = useState(EMPTY_FD);
   const [snapshot, setSnapshot] = useState(null);
+  const [talkingPoints, setTalkingPoints] = useState(null);
   const [hidden, setHidden] = useState({});
   const [editNarr, setEditNarr] = useState("");
   const [editCtx, setEditCtx] = useState("");
@@ -843,6 +1115,7 @@ function App() {
   const handleGenerate = () => {
     const s = generateSnapshot(fd);
     setSnapshot(s);
+    setTalkingPoints(generateTalkingPoints(fd, s));
     setEditNarr(s.narrative);
     setEditCtx(s.industryContext);
     setEditCTA("Reply to this email and we'll have a tailored analysis ready for your next fleet meeting. " +
@@ -1085,6 +1358,53 @@ function App() {
                         onBlur={e => e.target.style.borderColor = C.grayBorder} />
                     </div>
                   </div>
+
+                  {/* ── Your Role section ──────────────────────── */}
+                  <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid " + C.grayBorder }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, color: C.navy, margin: "0 0 4px 0" }}>
+                      Your Role
+                    </p>
+                    <p style={{ fontSize: 11, color: C.gray, margin: "0 0 12px 0" }}>
+                      Select your role to generate a tailored talking points doc alongside your snapshot.
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {[
+                        { id: "ADR", label: "ADR", active: true },
+                        { id: "AE", label: "AE, coming soon", active: false },
+                        { id: "Marketing", label: "Marketing, coming soon", active: false },
+                        { id: "Other", label: "Other, coming soon", active: false },
+                      ].map(r => {
+                        const checked = fd.role === r.id;
+                        return (
+                          <button key={r.id}
+                            onClick={() => r.active && setFd({ ...fd, role: r.id })}
+                            disabled={!r.active}
+                            title={!r.active ? "Available in a future version" : ""}
+                            style={{
+                              padding: "10px 14px", borderRadius: 8,
+                              border: "1.5px solid " + (checked ? C.blue : C.grayBorder),
+                              background: checked ? C.blueBg : (r.active ? C.white : "#FAFAFA"),
+                              cursor: r.active ? "pointer" : "not-allowed",
+                              display: "flex", justifyContent: "space-between", alignItems: "center",
+                              fontFamily: "inherit", width: "100%",
+                              opacity: r.active ? 1 : 0.5
+                            }}>
+                            <span style={{ fontSize: 13, fontWeight: 600, color: checked ? C.navy : C.dark }}>
+                              {r.label}
+                            </span>
+                            <div style={{
+                              width: 18, height: 18, borderRadius: 4,
+                              border: "2px solid " + (checked ? C.blue : "#D1D5DB"),
+                              background: checked ? C.blue : C.white,
+                              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+                            }}>
+                              {checked && <Check size={10} color={C.white} />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -1123,6 +1443,22 @@ function App() {
   }
 
   // ─── SNAPSHOT phase ──────────────────────────────────────────────────────
+  const downloadSnapshot = () => {
+    const t = document.title;
+    document.title = fd.customerName.replace(/\s+/g, '_') + '_Samsara Value Snapshot';
+    document.body.classList.add('print-snapshot-only');
+    window.print();
+    document.body.classList.remove('print-snapshot-only');
+    document.title = t;
+  };
+  const downloadTalkingPoints = () => {
+    const t = document.title;
+    document.title = fd.customerName.replace(/\s+/g, '_') + '_ADR Talking Points';
+    document.body.classList.add('print-talking-only');
+    window.print();
+    document.body.classList.remove('print-talking-only');
+    document.title = t;
+  };
   return (
     <div style={{ minHeight: "100vh", background: "#C8CED6",
       fontFamily: "'Helvetica Neue',Helvetica,Arial,sans-serif" }}>
@@ -1131,8 +1467,19 @@ function App() {
         @media print {
           .no-print, .no-print-edit > * { display: none !important; }
           body, html, #root { margin: 0; padding: 0; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          .snap { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; width: 11in !important; height: 8.5in !important; }
-          @page { size: 11in 8.5in landscape; margin: 0; }
+
+          /* Snapshot: landscape 11x8.5 */
+          .snap { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important;
+            width: 11in !important; height: 8.5in !important; page: snapshotPage; }
+          @page snapshotPage { size: 11in 8.5in landscape; margin: 0; }
+
+          /* Talking Points: portrait 8.5x11 */
+          .talking-page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important;
+            width: 8.5in !important; height: 11in !important; page: talkingPage; }
+          @page talkingPage { size: 8.5in 11in portrait; margin: 0; }
+
+          body.print-snapshot-only .talking-page { display: none !important; }
+          body.print-talking-only .snapshot-page { display: none !important; }
         }
       `}</style>
 
@@ -1152,18 +1499,27 @@ function App() {
               fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
             <RotateCcw size={12} /> New Snapshot
           </button>
-          <button onClick={() => { const t = document.title; document.title = fd.customerName.replace(/\s+/g, '_') + '_Samsara Value Snapshot'; window.print(); document.title = t; }}
+          <button onClick={downloadSnapshot}
             style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 18px",
               borderRadius: 6, border: "none", background: C.blue, color: "#fff",
               fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-            <Download size={12} /> Download PDF
+            <Download size={12} /> Download Snapshot
           </button>
+          {talkingPoints && (
+            <button onClick={downloadTalkingPoints}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "7px 18px",
+                borderRadius: 6, border: "1px solid " + C.blue,
+                background: "transparent", color: C.blueLight,
+                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              <Download size={12} /> Download Talking Points
+            </button>
+          )}
         </div>
       </div>
       <div className="no-print" style={{ maxWidth: 1100, margin: "6px auto 4px",
         padding: "0 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <p style={{ fontSize: 11, color: C.gray, fontStyle: "italic", margin: 0 }}>
-          Click text to edit · Hover sections to remove · Numbers are locked
+          Click text to edit · Hover sections to remove · Numbers are locked · Talking Points are internal-only
         </p>
         {Object.keys(hidden).length > 0 && (
           <button onClick={() => setHidden({})}
@@ -1174,15 +1530,31 @@ function App() {
         )}
       </div>
 
-      <SnapshotPage
-        fd={fd}
-        snapshot={snapshot}
-        hidden={hidden}
-        desel={desel}
-        editNarr={editNarr} setEditNarr={setEditNarr}
-        editCtx={editCtx} setEditCtx={setEditCtx}
-        editCTA={editCTA} setEditCTA={setEditCTA}
-      />
+      <div className="snapshot-page">
+        <SnapshotPage
+          fd={fd}
+          snapshot={snapshot}
+          hidden={hidden}
+          desel={desel}
+          editNarr={editNarr} setEditNarr={setEditNarr}
+          editCtx={editCtx} setEditCtx={setEditCtx}
+          editCTA={editCTA} setEditCTA={setEditCTA}
+        />
+      </div>
+
+      {talkingPoints && (
+        <div className="no-print" style={{ maxWidth: 1100, margin: "32px auto 8px",
+          padding: "0 12px", display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ height: 1, flex: 1, background: "#94A3B8" }} />
+          <span style={{ fontSize: 10, fontWeight: 700, color: "#475569",
+            letterSpacing: 2, textTransform: "uppercase" }}>
+            Internal Companion · {talkingPoints.header.role} Talking Points
+          </span>
+          <div style={{ height: 1, flex: 1, background: "#94A3B8" }} />
+        </div>
+      )}
+
+      <TalkingPointsPage fd={fd} talkingPoints={talkingPoints} />
     </div>
   );
 }
