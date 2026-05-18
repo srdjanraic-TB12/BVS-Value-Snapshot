@@ -79,7 +79,7 @@ const SAMSARA_LOGO_WHITE = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACwAAA
 const INDUSTRIES = [
   "Municipal Utilities", "City Fleet Services", "Public Works", "Transit Authority",
   "Parks & Recreation", "Water/Wastewater", "County Government", "State DOT",
-  "Emergency Services",
+  "Emergency Services", "K-12", "Higher Ed",
 ];
 
 // ─── Math + content helpers ────────────────────────────────────────────────
@@ -101,6 +101,8 @@ function getContext(industry, name) {
     "Water/Wastewater": `As a water and wastewater utility, ${name} operates around the clock with crews responding to emergencies across wide service areas — where every minute of response time matters and fleet visibility is critical.`,
     "County Government": `${name} oversees diverse fleet operations spanning law enforcement, public works, social services, and emergency response — requiring unified visibility across siloed departments.`,
     "Emergency Services": `As an emergency services operation, ${name} must protect first responders, maintain fleet readiness, and ensure the fastest possible response times — all while managing high-mileage vehicles and equipment, aggressive driving conditions, and intense public accountability.`,
+    "K-12": `K-12 districts operate transportation fleets under increasing pressure, with the national bus driver shortage leaving districts 9.5% below pre-pandemic staffing levels. For ${name}, every route, every stop, and every dollar is under scrutiny from parents, school boards, and taxpayers.`,
+    "Higher Ed": `${name}'s higher education fleet operations balance student-facing service with sustainability mandates, decentralized operations, and tight margins, all while supporting campus safety and modernization initiatives.`,
     "State DOT": `${name} manages one of the largest and most complex public fleets in the state, with seasonal demands, vast geographic coverage, and intense public accountability for safety and spending.`,
   };
   return m[industry] || "";
@@ -159,6 +161,8 @@ const CASE_STUDIES = {
   "County Government": { risk: CS.denver, efficiency: CS.kalamazoo, transform: CS.syracuse },
   "State DOT": { risk: CS.denver, efficiency: CS.sacramento, transform: CS.syracuse },
   "Emergency Services": { risk: CS.noems, efficiency: CS.coxhealth, transform: CS.coxhealth },
+  "K-12": { risk: CS.denver, efficiency: CS.fortlauderdale, transform: CS.syracuse },
+  "Higher Ed": { risk: CS.allentown, efficiency: CS.sacramento, transform: CS.fortlauderdale },
 };
 
 const CHALLENGE_THEMES = [
@@ -261,6 +265,140 @@ function generateNarrative(fd) {
   return base;
 }
 
+// ─── Pilot email field generators ──────────────────────────────────────────
+// These produce ready-to-paste prose for pilot email templates.
+// value_driver_phrase, top_benchmark_sentence, operational_translation.
+
+function getValueDriverPhrase(drivers) {
+  if (!drivers || drivers.length === 0) return "";
+  const has = (d) => drivers.includes(d);
+  if (drivers.length === 1) {
+    if (has("Reduce Risk")) return "accident-related costs and liability exposure";
+    if (has("Increase Efficiency")) return "fuel waste and fleet downtime";
+    if (has("Digitally Transform")) return "manual workflows and fragmented operational data";
+  }
+  // Two drivers — order canonicalized: Risk, Efficiency, Digital
+  if (has("Reduce Risk") && has("Increase Efficiency")) return "accident exposure and fuel and uptime waste";
+  if (has("Reduce Risk") && has("Digitally Transform")) return "accident exposure and manual workflows";
+  if (has("Increase Efficiency") && has("Digitally Transform")) return "fuel and uptime waste and manual workflows";
+  return "";
+}
+
+// Sentence templates keyed by benchmark label. Covers every benchmark the
+// code can match. Each takes the matched benchmark object {industry, samsara}
+// and returns the prose form for pilot emails.
+const BENCHMARK_TEMPLATES = {
+  // Reduce Risk benchmarks
+  "Harsh Events per 10K Miles": (b) => `harsh-event rates of ${b.industry} per 10K miles compared to ${b.samsara} for Samsara-equipped fleets`,
+  "% Time Spent Speeding": (b) => `${b.industry}% of drive time spent speeding compared to ${b.samsara}% for Samsara-equipped fleets`,
+  "Crash Rate (per million miles)": (b) => `crash rates of ${b.industry} per million miles compared to ${b.samsara} for Samsara-equipped fleets`,
+  "Asset Recovery Rate": (b) => `asset recovery rates of ${b.industry}% compared to ${b.samsara}% for Samsara-equipped fleets`,
+  "Manual Search Hrs / Week": (b) => `${b.industry} hours per week lost to searching for equipment compared to ${b.samsara} hours with Samsara`,
+  // Increase Efficiency benchmarks
+  "Idling %": (b) => `idle time of ${b.industry}% per shift compared to ${b.samsara}% with Samsara`,
+  "Fuel Efficiency (MPG)": (b) => `fuel efficiency at ${b.industry} MPG compared to ${b.samsara} MPG with Samsara`,
+  "Utilization Rate": (b) => `fleet utilization at ${b.industry}% compared to ${b.samsara}% for Samsara-equipped fleets`,
+  "Equipment Search Time": (b) => `equipment search time of ${b.industry} minutes compared to ${b.samsara} minutes with Samsara`,
+  "Unplanned Downtime": (b) => `unplanned downtime of ${b.industry}% compared to ${b.samsara}% with Samsara`,
+  "Asset Visibility Rate": (b) => `asset visibility at ${b.industry}% compared to ${b.samsara}% for Samsara-equipped fleets`,
+  "Dormancy Rate": (b) => `dormancy rates of ${b.industry}% compared to ${b.samsara}% with Samsara`,
+  "Unplanned Maintenance %": (b) => `unplanned maintenance at ${b.industry}% compared to ${b.samsara}% with Samsara`,
+  // Digitally Transform benchmarks
+  "DVIR Completion Rate": (b) => `DVIR completion rates of ${b.industry}% compared to ${b.samsara}% with Samsara`,
+  "Admin Hours / Week": (b) => `manual reporting averaging ${b.industry} hours/week per supervisor compared to ${b.samsara} hours/week with Samsara`,
+  "Training Completion Rate": (b) => `training completion rates of ${b.industry}% compared to ${b.samsara}% with Samsara`,
+  "Time per Training Session": (b) => `${b.industry} hours per training session compared to ${b.samsara} hours with Samsara`,
+  "Work Order Cycle Time": (b) => `work order cycles averaging ${b.industry} days compared to ${b.samsara} days with Samsara`,
+  "Planned Maintenance %": (b) => `planned maintenance at ${b.industry}% compared to ${b.samsara}% with Samsara`,
+};
+
+function getTopBenchmarkSentence(drivers, products) {
+  if (!drivers || drivers.length === 0 || !products || products.length === 0) return "";
+  const sentences = drivers.map(driver => {
+    const dk = driver === "Reduce Risk" ? "risk"
+      : driver === "Increase Efficiency" ? "efficiency" : "transform";
+    const bench = BENCHMARKS[dk][products[0]] || BENCHMARKS[dk].default;
+    const primary = bench[0];
+    const template = BENCHMARK_TEMPLATES[primary.label];
+    if (template) return template(primary);
+    // Defensive fallback if a future benchmark slips through unmatched
+    return `${primary.label.toLowerCase()} of ${primary.industry}${primary.unit} compared to ${primary.samsara}${primary.unit} for Samsara-equipped fleets`;
+  });
+  return sentences.join(", and ");
+}
+
+// Segment-specific operational translation phrases.
+// Pulls a tangible re-investment phrase per (industry, value driver).
+const OPERATIONAL_TRANSLATION = {
+  "Municipal Utilities": {
+    risk: "additional line crew positions for outage response",
+    efficiency: "a bucket truck or service vehicle replacement cycle",
+    transform: "storm response readiness investment",
+  },
+  "City Fleet Services": {
+    risk: "additional technicians for the shop",
+    efficiency: "an accelerated replacement cycle for the aging light-duty fleet",
+    transform: "overtime budget for after-hours and emergency service",
+  },
+  "Public Works": {
+    risk: "overtime budget for storm response and snow operations",
+    efficiency: "a light-duty truck replacement cycle for the aging fleet",
+    transform: "additional field crew positions for road and maintenance operations",
+  },
+  "Transit Authority": {
+    risk: "operator retention bonuses to address the driver shortage",
+    efficiency: "paratransit service expansion",
+    transform: "a fleet electrification feasibility study or pilot",
+  },
+  "Parks & Recreation": {
+    risk: "a new utility vehicle or specialty equipment unit",
+    efficiency: "an equipment refresh for the aging mowing and maintenance fleet",
+    transform: "seasonal staffing for park and grounds operations",
+  },
+  "Water/Wastewater": {
+    risk: "additional field service crews for inspection and repair",
+    efficiency: "a vactor or service truck replacement cycle",
+    transform: "treatment plant equipment modernization",
+  },
+  "County Government": {
+    risk: "a county-wide overtime reserve for emergency response",
+    efficiency: "accelerated replacement for the aging multi-department fleet",
+    transform: "additional staffing across operating departments",
+  },
+  "State DOT": {
+    risk: "additional snowplow operators or seasonal maintenance staffing",
+    efficiency: "equipment replacement for aging plows and graders",
+    transform: "highway crew capacity for pothole and bridge work",
+  },
+  "Emergency Services": {
+    risk: "a new ambulance or response apparatus",
+    efficiency: "an annual turnout gear and equipment refresh",
+    transform: "additional dispatch or response personnel",
+  },
+  "K-12": {
+    risk: "bus driver retention bonuses or recruitment pipeline investments",
+    efficiency: "an accelerated bus fleet refresh",
+    transform: "special-needs transportation expansion",
+  },
+  "Higher Ed": {
+    risk: "campus transit fleet modernization",
+    efficiency: "sustainability and electrification initiatives",
+    transform: "student-facing service expansion",
+  },
+};
+
+function getOperationalTranslation(industry, drivers) {
+  if (!industry || !drivers || drivers.length === 0) return "";
+  const map = OPERATIONAL_TRANSLATION[industry];
+  if (!map) return "";
+  const phrases = drivers.map(d => {
+    const dk = d === "Reduce Risk" ? "risk"
+      : d === "Increase Efficiency" ? "efficiency" : "transform";
+    return map[dk];
+  }).filter(Boolean);
+  return phrases.join(", or ");
+}
+
 function generateSnapshot(fd) {
   const selected = fd.products.map(id => ALL_PRODUCTS.find(p => p.id === id)).filter(Boolean);
   let tA = 0, tS = 0;
@@ -274,15 +412,36 @@ function generateSnapshot(fd) {
   const eq = EQUIVALENCY[dk];
   const eqNum = Math.round(tS / eq.divisor);
   const eqText = eqNum >= 2 ? "Equivalent to ~" + eqNum + " " + eq.label : "";
+
+  const totalAvoidable = roundTo5K(tA);
+  const totalSavings = roundTo5K(tS);
+  const benchmarks = BENCHMARKS[dk][fd.products[0]] || BENCHMARKS[dk].default;
+
+  // ─── New pilot email fields ─────────────────────────────────────────────
+  const valueDriverPhrase = getValueDriverPhrase(fd.valueDrivers);
+  const topBenchmarkSentence = getTopBenchmarkSentence(fd.valueDrivers, fd.products);
+  const operationalTranslation = getOperationalTranslation(fd.industry, fd.valueDrivers);
+
+  // Build narrative and append operational translation as a final sentence,
+  // matching the existing Challenge Keyword append pattern.
+  let narrative = generateNarrative(fd);
+  if (operationalTranslation && totalAvoidable > 0) {
+    narrative += ` Recovering ~$${totalAvoidable.toLocaleString()} could help fund ${operationalTranslation}.`;
+  }
+
   return {
-    totalAvoidable: roundTo5K(tA),
-    totalSavings: roundTo5K(tS),
-    narrative: generateNarrative(fd),
-    benchmarks: BENCHMARKS[dk][fd.products[0]] || BENCHMARKS[dk].default,
+    totalAvoidable,
+    totalSavings,
+    narrative,
+    benchmarks,
     caseStudy: CASE_STUDIES[fd.industry][dk],
     industryContext: getContext(fd.industry, fd.customerName),
     custLabels: selected.map(p => p.custLabel),
     equivalency: eqText,
+    // Pilot email template fields
+    valueDriverPhrase,
+    topBenchmarkSentence,
+    operationalTranslation,
   };
 }
 
@@ -939,15 +1098,15 @@ function generateADRTalkingPoints(fd, snapshot) {
   }).join(", ");
 
   // Section 1: How the savings number was built
+  // Uses the snapshot-generated benchmark sentence + value driver phrase for consistency
+  // with the email templates. The operational translation is the math's "so what."
   const benchmark1 = snapshot.benchmarks[0];
   const benchmark2 = snapshot.benchmarks[1];
-  const driverFraming = dk === "Reduce Risk"
-    ? `accident reduction and liability cost avoidance`
-    : dk === "Increase Efficiency"
-    ? `fuel, utilization, and uptime improvements`
-    : `digitization of manual workflows and admin time recovery`;
 
-  const section1 = `The ~$${snapshot.totalSavings.toLocaleString()} projected savings assumes a ${s}-vehicle fleet${ha ? ` and ${fd.assetSize} assets` : ""} with ${totalProducts}. The number is built from ${driverFraming} benchmarks — specifically, ${benchmark1.label.toLowerCase()} dropping from ${benchmark1.industry}${benchmark1.unit} (industry average) to ${benchmark1.samsara}${benchmark1.unit} (Samsara customers) — applied to typical ${fd.industry.toLowerCase()} cost structures. It's deliberately conservative. Real savings depend on the prospect's current state, which a deeper analysis would surface.`;
+  let section1 = `The ~$${snapshot.totalSavings.toLocaleString()} projected savings assumes a ${s}-vehicle fleet${ha ? ` and ${fd.assetSize} assets` : ""} with ${totalProducts}. The math comes from real benchmark gaps: ${snapshot.topBenchmarkSentence}, applied to typical ${fd.industry.toLowerCase()} cost structures targeting ${snapshot.valueDriverPhrase}. It's deliberately conservative — real savings depend on the prospect's current state, which a deeper analysis would surface.`;
+  if (snapshot.operationalTranslation && snapshot.totalAvoidable > 0) {
+    section1 += ` Bottom line: recovering ~$${snapshot.totalAvoidable.toLocaleString()} could fund ${snapshot.operationalTranslation} — that's the budget-conversation framing.`;
+  }
 
   // Section 2: Talking points (3-5, driver and product-aware)
   const talkingPoints = [];
@@ -978,19 +1137,28 @@ function generateADRTalkingPoints(fd, snapshot) {
     talkingPoints.push(`The transformation story isn't about replacing what works, it's about connecting what doesn't talk to each other today.`);
   }
 
-  // Add equivalency-based talking point if applicable
+  // Operational translation — the budget-conversation talking point.
+  // This is usually the strongest closer for public sector ADRs because it
+  // translates abstract savings into a tangible reinvestment story.
+  if (snapshot.operationalTranslation && snapshot.totalAvoidable > 0) {
+    talkingPoints.unshift(`The ~$${snapshot.totalAvoidable.toLocaleString()} in avoidable cost could fund ${snapshot.operationalTranslation}. That's the budget-conversation framing — lead with this when you're talking to anyone in finance or operations.`);
+  }
+
+  // Equivalency talking point — translates savings into outcome units
   if (snapshot.equivalency) {
-    talkingPoints.push(`The ~$${snapshot.totalSavings.toLocaleString()} number ${snapshot.equivalency.toLowerCase()}. That makes the abstract concrete when you talk to someone in finance.`);
+    talkingPoints.push(`The ~$${snapshot.totalSavings.toLocaleString()} number ${snapshot.equivalency.toLowerCase()}. That makes the abstract concrete on a safety or operations conversation.`);
   }
 
   // Cap at 5
   const finalTalkingPoints = talkingPoints.slice(0, 5);
 
-  // Section 3: Objections
+  // Section 3: Objections — first objection dynamically references the
+  // prospect's actual value driver concern via valueDriverPhrase.
+  const vdp = snapshot.valueDriverPhrase || "accident-related costs";
   const objections = [
     {
       objection: "There's no way we save that much.",
-      response: "I hear that a lot. The number is conservative on purpose. Real savings depend on your current camera coverage, incident frequency, and how much your team spends on accident-related costs today. Happy to walk through the math."
+      response: `I hear that a lot. The number is conservative on purpose. Real savings depend on how much your team spends on ${vdp} today — happy to walk through the math with whatever data you have on hand.`
     },
     {
       objection: "We already have GPS.",
@@ -1563,4 +1731,4 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
-</html> 
+</html>
