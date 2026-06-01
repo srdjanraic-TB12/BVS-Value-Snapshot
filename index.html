@@ -140,24 +140,24 @@ const VALUE_DRIVERS = [
 ];
 
 const CS = {
-  allentown: { customer: "City of Allentown", stat: "Saved $1M+ with AI Dash Cams", quote: "Samsara has been a game changer for us. Across the board, it has saved us a lot of time and money." },
-  poughkeepsie: { customer: "City of Poughkeepsie", stat: "Reduced accidents by 25% in 4 months", quote: "With Samsara, it's easy to get insights into our maintenance costs and manage our spend." },
-  denver: { customer: "City & County of Denver", stat: "94% reduction in safety incidents", quote: "Last year, we achieved an overall average safety score of 95." },
-  fortlauderdale: { customer: "City of Fort Lauderdale", stat: "Reduced vehicle downtime by 28%", quote: "There are so many things we can capture in one system." },
-  sacramento: { customer: "City of Sacramento", stat: "Saved $300K annually in fuel", quote: "Having customizable data to make conclusions about our fleet is key." },
-  kalamazoo: { customer: "Road Commission of Kalamazoo County", stat: "Immediate cost savings of $60K", quote: "" },
-  athens: { customer: "Athens-Clarke County Solid Waste", stat: "Improved fuel efficiency by 58%", quote: "" },
-  syracuse: { customer: "City of Syracuse", stat: "30% decrease in citizen calls about service", quote: "" },
-  noems: { customer: "New Orleans EMS", stat: "81% reduction in collision risk", quote: "We now have full, real-time visibility across our operations." },
-  coxhealth: { customer: "CoxHealth EMS", stat: "94% reduction in maintenance processing time", quote: "Samsara has done wonders for us." },
+  allentown: { customer: "City of Allentown", stat: "Saved $1M+ with AI Dash Cams", quote: "Samsara has been a game changer for us. Across the board, it has saved us a lot of time and money.", theme: ["risk", "efficiency"] },
+  poughkeepsie: { customer: "City of Poughkeepsie", stat: "Reduced accidents by 25% in 4 months", quote: "With Samsara, it's easy to get insights into our maintenance costs and manage our spend.", theme: ["efficiency"] },
+  denver: { customer: "City & County of Denver", stat: "94% reduction in safety incidents", quote: "Last year, we achieved an overall average safety score of 95.", theme: ["risk"] },
+  fortlauderdale: { customer: "City of Fort Lauderdale", stat: "Reduced vehicle downtime by 28%", quote: "There are so many things we can capture in one system.", theme: ["efficiency", "transform"] },
+  sacramento: { customer: "City of Sacramento", stat: "Saved $300K annually in fuel", quote: "Having customizable data to make conclusions about our fleet is key.", theme: ["efficiency"] },
+  kalamazoo: { customer: "Road Commission of Kalamazoo County", stat: "Immediate cost savings of $60K", quote: "", theme: ["efficiency"] },
+  athens: { customer: "Athens-Clarke County Solid Waste", stat: "Improved fuel efficiency by 58%", quote: "", theme: ["efficiency"] },
+  syracuse: { customer: "City of Syracuse", stat: "30% decrease in citizen calls about service", quote: "", theme: ["transform"] },
+  noems: { customer: "New Orleans EMS", stat: "81% reduction in collision risk", quote: "We now have full, real-time visibility across our operations.", theme: ["risk", "transform"] },
+  coxhealth: { customer: "CoxHealth EMS", stat: "94% reduction in maintenance processing time", quote: "Samsara has done wonders for us.", theme: ["efficiency", "transform"] },
 };
 const CASE_STUDIES = {
   "Municipal Utilities": { risk: CS.allentown, efficiency: CS.sacramento, transform: CS.syracuse },
   "City Fleet Services": { risk: CS.allentown, efficiency: CS.fortlauderdale, transform: CS.fortlauderdale },
-  "Public Works": { risk: CS.poughkeepsie, efficiency: CS.athens, transform: CS.syracuse },
+  "Public Works": { risk: CS.denver, efficiency: CS.athens, transform: CS.syracuse },
   "Transit Authority": { risk: CS.denver, efficiency: CS.fortlauderdale, transform: CS.syracuse },
   "Parks & Recreation": { risk: CS.denver, efficiency: CS.fortlauderdale, transform: CS.fortlauderdale },
-  "Water/Wastewater": { risk: CS.poughkeepsie, efficiency: CS.sacramento, transform: CS.syracuse },
+  "Water/Wastewater": { risk: CS.denver, efficiency: CS.sacramento, transform: CS.syracuse },
   "County Government": { risk: CS.denver, efficiency: CS.kalamazoo, transform: CS.syracuse },
   "State DOT": { risk: CS.denver, efficiency: CS.sacramento, transform: CS.syracuse },
   "Emergency Services": { risk: CS.noems, efficiency: CS.coxhealth, transform: CS.coxhealth },
@@ -467,12 +467,22 @@ function generateSnapshot(fd) {
     narrative += ` Recovering ~$${totalAvoidable.toLocaleString()} could help fund ${operationalTranslation}.`;
   }
 
+  // ─── Case study alignment safeguard ───────────────────────────────────────
+  // Suppress quote if the case study's published quote doesn't thematically
+  // match the value driver. Prevents stat/quote mismatches on the snapshot.
+  const rawCaseStudy = CASE_STUDIES[fd.industry][dk];
+  const themeAligned = !rawCaseStudy.theme || rawCaseStudy.theme.length === 0
+    || rawCaseStudy.theme.includes(dk);
+  const caseStudy = themeAligned
+    ? rawCaseStudy
+    : { ...rawCaseStudy, quote: "" };
+
   return {
     totalAvoidable,
     totalSavings,
     narrative,
     benchmarks,
-    caseStudy: CASE_STUDIES[fd.industry][dk],
+    caseStudy,
     industryContext: getContext(fd.industry, fd.customerName),
     custLabels: selected.map(p => p.custLabel),
     equivalency: eqText,
@@ -740,28 +750,6 @@ function SnapshotPage({ fd, snapshot, hidden, desel,
               <p style={{ margin: 0, fontSize: 9.5, color: "rgba(255,255,255,0.65)", fontWeight: 400 }}>
                 in avoidable annual costs across your operation
               </p>
-              {s.lossBreakdown && s.lossBreakdown.length > 0 && (
-                <div style={{ marginTop: 10, paddingTop: 9,
-                  borderTop: `1px dashed ${C.red}45` }}>
-                  <p style={{ margin: "0 0 5px 0", fontSize: 7, fontWeight: 700,
-                    letterSpacing: 1.6, textTransform: "uppercase",
-                    color: "rgba(255,255,255,0.55)" }}>
-                    Where the loss shows up
-                  </p>
-                  {s.lossBreakdown.map((b, i) => (
-                    <div key={i} style={{ display: "flex", justifyContent: "space-between",
-                      alignItems: "baseline", marginBottom: i < s.lossBreakdown.length - 1 ? 2 : 0 }}>
-                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.78)", fontWeight: 400 }}>
-                        · {b.label}
-                      </span>
-                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.92)",
-                        fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                        ~{bigNum(b.amount)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </Section>
         )}
