@@ -399,6 +399,43 @@ function getOperationalTranslation(industry, drivers) {
   return phrases.join(", or ");
 }
 
+// ─── Loss attribution: map each product to a high-level loss category ─────
+// Per KP's pilot feedback: a City Manager/COO needs to see WHERE the loss
+// is concentrated, not just the total number. This drives routing decisions.
+const LOSS_CATEGORY_MAP = {
+  cm33: "Accident & liability exposure",
+  cm34: "Accident & liability exposure",
+  cm34_aim4: "Accident & liability exposure",
+  vg: "Fuel waste & operational inefficiency",
+  at: "Equipment visibility & recovery",
+  ag51: "Equipment visibility & recovery",
+  ag52: "Equipment underutilization & downtime",
+  ag53: "Equipment underutilization & downtime",
+  training: "Driver training & retention costs",
+  workflows: "Admin time on paper-based processes",
+  cam: "Maintenance cost variability",
+};
+
+function getLossBreakdown(fd) {
+  const buckets = {};
+  fd.products.forEach(id => {
+    const prod = ALL_PRODUCTS.find(x => x.id === id);
+    if (!prod) return;
+    const category = LOSS_CATEGORY_MAP[id] || "Other operational losses";
+    const multiplier = prod.appliesTo === "fleet" ? fd.fleetSize
+      : prod.appliesTo === "asset" ? fd.assetSize
+      : fd.fleetSize + fd.assetSize;
+    const dollars = prod.avoidCost * multiplier;
+    buckets[category] = (buckets[category] || 0) + dollars;
+  });
+  // Sort by dollar amount descending, round to 5K, keep top 3
+  return Object.entries(buckets)
+    .map(([label, amount]) => ({ label, amount: roundTo5K(amount) }))
+    .filter(b => b.amount > 0)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 3);
+}
+
 function generateSnapshot(fd) {
   const selected = fd.products.map(id => ALL_PRODUCTS.find(p => p.id === id)).filter(Boolean);
   let tA = 0, tS = 0;
@@ -421,6 +458,7 @@ function generateSnapshot(fd) {
   const valueDriverPhrase = getValueDriverPhrase(fd.valueDrivers);
   const topBenchmarkSentence = getTopBenchmarkSentence(fd.valueDrivers, fd.products);
   const operationalTranslation = getOperationalTranslation(fd.industry, fd.valueDrivers);
+  const lossBreakdown = getLossBreakdown(fd);
 
   // Build narrative and append operational translation as a final sentence,
   // matching the existing Challenge Keyword append pattern.
@@ -442,6 +480,7 @@ function generateSnapshot(fd) {
     valueDriverPhrase,
     topBenchmarkSentence,
     operationalTranslation,
+    lossBreakdown,
   };
 }
 
@@ -701,6 +740,28 @@ function SnapshotPage({ fd, snapshot, hidden, desel,
               <p style={{ margin: 0, fontSize: 9.5, color: "rgba(255,255,255,0.65)", fontWeight: 400 }}>
                 in avoidable annual costs across your operation
               </p>
+              {s.lossBreakdown && s.lossBreakdown.length > 0 && (
+                <div style={{ marginTop: 10, paddingTop: 9,
+                  borderTop: `1px dashed ${C.red}45` }}>
+                  <p style={{ margin: "0 0 5px 0", fontSize: 7, fontWeight: 700,
+                    letterSpacing: 1.6, textTransform: "uppercase",
+                    color: "rgba(255,255,255,0.55)" }}>
+                    Where the loss shows up
+                  </p>
+                  {s.lossBreakdown.map((b, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between",
+                      alignItems: "baseline", marginBottom: i < s.lossBreakdown.length - 1 ? 2 : 0 }}>
+                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.78)", fontWeight: 400 }}>
+                        · {b.label}
+                      </span>
+                      <span style={{ fontSize: 9, color: "rgba(255,255,255,0.92)",
+                        fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                        ~{bigNum(b.amount)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </Section>
         )}
@@ -1059,6 +1120,51 @@ function TalkingPointsPage({ fd, talkingPoints }) {
         </ol>
       </section>
 
+      {/* Cost Breakdown Quick Reference — for "where does that $X come from?" callbacks */}
+      {tp.lossBreakdown && tp.lossBreakdown.length > 0 && (
+        <section style={{
+          marginBottom: 20,
+          background: "#F8FAFC",
+          border: "1px solid " + C.grayBorder,
+          borderRadius: 6,
+          padding: "12px 16px"
+        }}>
+          <div style={{ display: "flex", justifyContent: "space-between",
+            alignItems: "baseline", marginBottom: 8,
+            paddingBottom: 6, borderBottom: "1px solid " + C.grayBorder }}>
+            <h3 style={{ margin: 0, fontSize: 11, fontWeight: 800,
+              color: C.navy, letterSpacing: 0.2 }}>
+              Cost Breakdown — Quick Reference
+            </h3>
+            <span style={{ fontSize: 9, fontWeight: 600, color: C.gray, fontStyle: "italic" }}>
+              For "where does that come from?" questions
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 12px" }}>
+            {tp.lossBreakdown.map((b, i) => (
+              <div key={i} style={{ display: "contents" }}>
+                <span style={{ fontSize: 10, color: C.dark, lineHeight: 1.5 }}>
+                  · {b.label}
+                </span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.navy,
+                  fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
+                  ~${b.amount.toLocaleString()}/year
+                </span>
+              </div>
+            ))}
+            <span style={{ fontSize: 10, fontWeight: 800, color: C.navy,
+              borderTop: "1px solid " + C.grayBorder, paddingTop: 6, marginTop: 2 }}>
+              Total avoidable
+            </span>
+            <span style={{ fontSize: 10, fontWeight: 800, color: C.red,
+              fontVariantNumeric: "tabular-nums", textAlign: "right",
+              borderTop: "1px solid " + C.grayBorder, paddingTop: 6, marginTop: 2 }}>
+              ~${tp.totalAvoidable.toLocaleString()}/year
+            </span>
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
       <div style={{
         marginTop: "auto", paddingTop: 12,
@@ -1197,7 +1303,9 @@ function generateADRTalkingPoints(fd, snapshot) {
     section1: section1,
     section2: finalTalkingPoints,
     section3: objections,
-    section4: followUps
+    section4: followUps,
+    lossBreakdown: snapshot.lossBreakdown,
+    totalAvoidable: snapshot.totalAvoidable,
   };
 }
 
